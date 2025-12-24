@@ -1,10 +1,7 @@
-"""Application configuration using pydantic-settings.
+"""Settings class for application configuration.
 
-Centralizes all configuration in a single place using pydantic-settings
-for validation and environment variable loading.
+Uses pydantic-settings for automatic environment variable loading and validation.
 """
-
-from functools import lru_cache
 
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,6 +11,12 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables.
 
     Uses pydantic-settings for automatic env var loading and validation.
+    All settings can be overridden via environment variables or .env file.
+
+    Example:
+        >>> settings = Settings()
+        >>> print(settings.backend_api_url)
+        http://localhost:3000
     """
 
     model_config = SettingsConfigDict(
@@ -47,13 +50,3 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         """Check if running in production environment."""
         return self.environment.lower() == "production"
-
-
-@lru_cache(maxsize=1)
-def get_settings() -> Settings:
-    """Get cached settings instance.
-
-    Returns:
-        Singleton Settings instance.
-    """
-    return Settings()

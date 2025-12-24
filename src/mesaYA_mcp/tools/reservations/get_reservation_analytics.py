@@ -1,0 +1,83 @@
+"""Tool: get_reservation_analytics - Get reservation statistics."""
+
+from mesaYA_mcp.server import mcp
+from mesaYA_mcp.shared.core import get_logger, get_http_client
+
+
+@mcp.tool()
+async def get_reservation_analytics(
+    restaurant_id: str = "",
+    date_from: str = "",
+    date_to: str = "",
+) -> str:
+    """Get reservation analytics and statistics.
+
+    Args:
+        restaurant_id: Optional restaurant UUID to filter by.
+        date_from: Start date for analytics period (YYYY-MM-DD).
+        date_to: End date for analytics period (YYYY-MM-DD).
+
+    Returns:
+        Reservation statistics including counts by status, peak times, etc.
+    """
+    logger = get_logger()
+    http_client = get_http_client()
+
+    logger.info(
+        "Getting reservation analytics",
+        context="get_reservation_analytics",
+        restaurant_id=restaurant_id,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+    try:
+        params: dict = {}
+        if restaurant_id:
+            params["restaurantId"] = restaurant_id
+        if date_from:
+            params["dateFrom"] = date_from
+        if date_to:
+            params["dateTo"] = date_to
+
+        response = await http_client.get(
+            "/api/v1/reservations/analytics", params=params
+        )
+
+        if response is None:
+            return "❌ Error: Unable to retrieve reservation analytics"
+
+        total = response.get("total", 0)
+        by_status = response.get("byStatus", {})
+        avg_party = response.get("averagePartySize", 0)
+        peak_hours = response.get("peakHours", [])
+        peak_days = response.get("peakDays", [])
+
+        result = "📊 **Reservation Analytics**\n\n"
+        result += f"📈 Total Reservations: {total}\n"
+        result += f"👥 Average Party Size: {avg_party:.1f}\n\n"
+
+        if by_status:
+            result += "📋 **By Status:**\n"
+            for status, count in by_status.items():
+                pct = (count / total * 100) if total > 0 else 0
+                result += f"   • {status.capitalize()}: {count} ({pct:.1f}%)\n"
+            result += "\n"
+
+        if peak_hours:
+            result += "⏰ **Peak Hours:** "
+            result += ", ".join(peak_hours[:5]) + "\n"
+
+        if peak_days:
+            result += "📅 **Peak Days:** "
+            result += ", ".join(peak_days[:3]) + "\n"
+
+        return result.strip()
+
+    except Exception as e:
+        logger.error(
+            "Failed to get reservation analytics",
+            error=str(e),
+            context="get_reservation_analytics",
+        )
+        return f"❌ Error getting reservation analytics: {str(e)}"
