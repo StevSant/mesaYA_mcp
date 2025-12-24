@@ -1,4 +1,3 @@
-
 """MesaYA MCP Server - Model Context Protocol server for MesaYA platform.
 
 This module provides the entry point for the MCP server, offering tools
