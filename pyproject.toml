@@ -1,0 +1,19 @@
+[project]
+name = "mesaya-mcp"
+version = "0.1.0"
+description = "MCP server for MesaYA restaurant reservation platform"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastmcp>=2.14.1",
+    "pydantic-settings>=2.0.0",
+]
+
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project.scripts]
+app = "mesaYA_mcp.__main__:main"
