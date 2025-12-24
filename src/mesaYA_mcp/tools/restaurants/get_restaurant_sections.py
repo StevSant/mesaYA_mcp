@@ -2,6 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 
 
@@ -13,10 +14,11 @@ async def get_restaurant_sections(dto: RestaurantIdDto) -> str:
         dto: Restaurant ID parameter.
 
     Returns:
-        List of sections (dining areas) with their table counts.
+        List of sections (dining areas) in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Getting restaurant sections",
@@ -30,30 +32,19 @@ async def get_restaurant_sections(dto: RestaurantIdDto) -> str:
         )
 
         if response is None:
-            return f"❌ Sections not found for restaurant '{dto.restaurant_id}'"
+            return adapter.map_not_found("section", dto.restaurant_id)
 
         sections = response if isinstance(response, list) else response.get("data", [])
 
         if not sections:
-            return "🏠 No sections configured for this restaurant"
+            return adapter.map_empty("section", "list")
 
-        result = "🏠 **Restaurant Sections:**\n\n"
-
-        for section in sections:
-            name = section.get("name", "Unnamed Section")
-            section_id = section.get("id", "")[:8]
-            description = section.get("description", "")
-            tables = section.get("tables", [])
-            table_count = len(tables) if isinstance(tables, list) else 0
-            is_active = section.get("isActive", True)
-
-            status = "✅" if is_active else "⏸️"
-            result += f"{status} **{name}** (#{section_id})\n"
-            if description:
-                result += f"   {description}\n"
-            result += f"   🪑 Tables: {table_count}\n\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=sections,
+            entity_type="section",
+            operation="list",
+            count=len(sections),
+        )
 
     except Exception as e:
         logger.error(
@@ -61,4 +52,8 @@ async def get_restaurant_sections(dto: RestaurantIdDto) -> str:
             error=str(e),
             context="get_restaurant_sections",
         )
-        return f"❌ Error getting restaurant sections: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="section",
+            operation="list",
+        )

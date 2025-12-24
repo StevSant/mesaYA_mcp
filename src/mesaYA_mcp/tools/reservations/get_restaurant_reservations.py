@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_reservation_summary
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import RestaurantReservationsDto
 
 
@@ -14,10 +14,11 @@ async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
         dto: Restaurant reservations parameters including restaurant_id, date, status, limit.
 
     Returns:
-        List of reservations for the restaurant.
+        List of reservations for the restaurant in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Getting restaurant reservations",
@@ -39,24 +40,22 @@ async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
         )
 
         if response is None:
-            return f"❌ Could not retrieve reservations for restaurant '{dto.restaurant_id}'"
+            return adapter.map_not_found("reservation", dto.restaurant_id)
 
         if isinstance(response, dict):
             reservations = response.get("data", [])
-            total = response.get("pagination", {}).get("totalItems", len(reservations))
         else:
             reservations = response
-            total = len(reservations)
 
         if not reservations:
-            filter_msg = f" for date {dto.date}" if dto.date else ""
-            return f"🔍 No reservations found{filter_msg}"
+            return adapter.map_empty("reservation", "list")
 
-        result = f"📋 Found {total} reservations:\n\n"
-        for r in reservations:
-            result += format_reservation_summary(r) + "\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=reservations,
+            entity_type="reservation",
+            operation="list",
+            count=len(reservations),
+        )
 
     except Exception as e:
         logger.error(
@@ -64,4 +63,8 @@ async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
             error=str(e),
             context="get_restaurant_reservations",
         )
-        return f"❌ Error getting restaurant reservations: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="reservation",
+            operation="list",
+        )

@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_dish
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.menus import SearchDishesDto
 
 
@@ -14,10 +14,11 @@ async def search_dishes(dto: SearchDishesDto) -> str:
         dto: Search parameters including query, restaurant_id, category, max_price, vegetarian, limit.
 
     Returns:
-        List of matching dishes with details.
+        List of matching dishes in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Searching dishes",
@@ -40,25 +41,27 @@ async def search_dishes(dto: SearchDishesDto) -> str:
         response = await http_client.get("/api/v1/dishes/search", params=params)
 
         if response is None:
-            return f"🔍 No dishes found matching '{dto.query}'"
+            return adapter.map_empty("dish", "search")
 
         if isinstance(response, dict):
             dishes = response.get("data", [])
-            total = response.get("pagination", {}).get("totalItems", len(dishes))
         else:
             dishes = response
-            total = len(dishes)
 
         if not dishes:
-            return f"🔍 No dishes found matching '{dto.query}'"
+            return adapter.map_empty("dish", "search")
 
-        result = f"🍽️ Found {total} dishes matching '{dto.query}':\n\n"
-
-        for dish in dishes:
-            result += format_dish(dish) + "\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=dishes,
+            entity_type="dish",
+            operation="search",
+            count=len(dishes),
+        )
 
     except Exception as e:
         logger.error("Failed to search dishes", error=str(e), context="search_dishes")
-        return f"❌ Error searching dishes: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="dish",
+            operation="search",
+        )

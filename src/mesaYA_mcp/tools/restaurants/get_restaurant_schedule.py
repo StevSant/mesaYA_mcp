@@ -2,18 +2,8 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
-
-
-DAYS_MAP = {
-    0: "Monday",
-    1: "Tuesday",
-    2: "Wednesday",
-    3: "Thursday",
-    4: "Friday",
-    5: "Saturday",
-    6: "Sunday",
-}
 
 
 @mcp.tool()
@@ -24,10 +14,11 @@ async def get_restaurant_schedule(dto: RestaurantIdDto) -> str:
         dto: Restaurant ID parameter.
 
     Returns:
-        Weekly schedule with opening and closing times for each day.
+        Weekly schedule with opening and closing times in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Getting restaurant schedule",
@@ -41,28 +32,19 @@ async def get_restaurant_schedule(dto: RestaurantIdDto) -> str:
         )
 
         if response is None:
-            return f"❌ Schedule not found for restaurant '{dto.restaurant_id}'"
+            return adapter.map_not_found("schedule", dto.restaurant_id)
 
         schedules = response if isinstance(response, list) else response.get("data", [])
 
         if not schedules:
-            return "📅 No schedule information available for this restaurant"
+            return adapter.map_empty("schedule", "get")
 
-        result = "🕐 **Restaurant Schedule:**\n\n"
-
-        for schedule in sorted(schedules, key=lambda x: x.get("dayOfWeek", 0)):
-            day_num = schedule.get("dayOfWeek", 0)
-            day_name = DAYS_MAP.get(day_num, f"Day {day_num}")
-            open_time = schedule.get("openTime", "??:??")
-            close_time = schedule.get("closeTime", "??:??")
-            is_closed = schedule.get("isClosed", False)
-
-            if is_closed:
-                result += f"   {day_name}: 🔴 Closed\n"
-            else:
-                result += f"   {day_name}: {open_time} - {close_time}\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=schedules,
+            entity_type="schedule",
+            operation="get",
+            count=len(schedules),
+        )
 
     except Exception as e:
         logger.error(
@@ -70,4 +52,8 @@ async def get_restaurant_schedule(dto: RestaurantIdDto) -> str:
             error=str(e),
             context="get_restaurant_schedule",
         )
-        return f"❌ Error getting restaurant schedule: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="schedule",
+            operation="get",
+        )

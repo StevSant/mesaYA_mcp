@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_user
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.users import UserIdDto
 
 
@@ -14,10 +14,11 @@ async def get_user(dto: UserIdDto) -> str:
         dto: User ID parameter.
 
     Returns:
-        Complete user profile including role and preferences.
+        Complete user profile in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info("Getting user details", context="get_user", user_id=dto.user_id)
 
@@ -25,10 +26,18 @@ async def get_user(dto: UserIdDto) -> str:
         response = await http_client.get(f"/api/v1/users/{dto.user_id}")
 
         if response is None:
-            return f"❌ User with ID '{dto.user_id}' not found"
+            return adapter.map_not_found("user", dto.user_id)
 
-        return format_user(response)
+        return adapter.map_success(
+            data=response,
+            entity_type="user",
+            operation="get",
+        )
 
     except Exception as e:
         logger.error("Failed to get user", error=str(e), context="get_user")
-        return f"❌ Error getting user: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="user",
+            operation="get",
+        )

@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_user_summary
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.users import ListUsersDto
 
 
@@ -14,10 +14,11 @@ async def list_users(dto: ListUsersDto) -> str:
         dto: Filter parameters including role, active_only, search, and limit.
 
     Returns:
-        List of users matching the criteria.
+        List of users in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Listing users",
@@ -38,25 +39,31 @@ async def list_users(dto: ListUsersDto) -> str:
         response = await http_client.get("/api/v1/users", params=params)
 
         if response is None:
-            return "❌ Error: Unable to retrieve users"
+            return adapter.map_error(
+                message="Unable to retrieve users",
+                entity_type="user",
+                operation="list",
+            )
 
         if isinstance(response, dict):
             users = response.get("data", [])
-            total = response.get("pagination", {}).get("totalItems", len(users))
         else:
             users = response
-            total = len(users)
 
         if not users:
-            return "🔍 No users found"
+            return adapter.map_empty("user", "list")
 
-        result = f"👥 Found {total} users:\n\n"
-
-        for user in users:
-            result += format_user_summary(user) + "\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=users,
+            entity_type="user",
+            operation="list",
+            count=len(users),
+        )
 
     except Exception as e:
         logger.error("Failed to list users", error=str(e), context="list_users")
-        return f"❌ Error listing users: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="user",
+            operation="list",
+        )

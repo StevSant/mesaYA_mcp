@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_reservation
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import ReservationIdDto
 
 
@@ -14,10 +14,11 @@ async def confirm_reservation(dto: ReservationIdDto) -> str:
         dto: Reservation ID parameter.
 
     Returns:
-        Confirmation message with updated reservation details.
+        Confirmation message with updated reservation details in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Confirming reservation",
@@ -32,15 +33,24 @@ async def confirm_reservation(dto: ReservationIdDto) -> str:
         )
 
         if response is None:
-            return f"❌ Error: Unable to confirm reservation '{dto.reservation_id}'"
+            return adapter.map_error(
+                message=f"Unable to confirm reservation '{dto.reservation_id}'",
+                entity_type="reservation",
+                operation="confirm",
+            )
 
-        result = "✅ Reservation confirmed successfully!\n\n"
-        result += format_reservation(response)
-
-        return result
+        return adapter.map_success(
+            data=response,
+            entity_type="reservation",
+            operation="confirm",
+        )
 
     except Exception as e:
         logger.error(
             "Failed to confirm reservation", error=str(e), context="confirm_reservation"
         )
-        return f"❌ Error confirming reservation: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="reservation",
+            operation="confirm",
+        )

@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_reservation
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import UpdateReservationStatusDto
 
 
@@ -14,10 +14,11 @@ async def update_reservation_status(dto: UpdateReservationStatusDto) -> str:
         dto: Status update parameters including reservation_id, new_status, and reason.
 
     Returns:
-        Confirmation of the status update.
+        Confirmation of the status update in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Updating reservation status",
@@ -37,12 +38,17 @@ async def update_reservation_status(dto: UpdateReservationStatusDto) -> str:
         )
 
         if response is None:
-            return f"❌ Error: Unable to update reservation '{dto.reservation_id}'"
+            return adapter.map_error(
+                message=f"Unable to update reservation '{dto.reservation_id}'",
+                entity_type="reservation",
+                operation="update",
+            )
 
-        result = f"✅ Reservation status updated to '{dto.new_status}'!\n\n"
-        result += format_reservation(response)
-
-        return result
+        return adapter.map_success(
+            data=response,
+            entity_type="reservation",
+            operation="update",
+        )
 
     except Exception as e:
         logger.error(
@@ -50,4 +56,8 @@ async def update_reservation_status(dto: UpdateReservationStatusDto) -> str:
             error=str(e),
             context="update_reservation_status",
         )
-        return f"❌ Error updating reservation status: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="reservation",
+            operation="update",
+        )

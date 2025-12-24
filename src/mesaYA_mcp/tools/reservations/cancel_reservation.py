@@ -2,6 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import CancelReservationDto
 
 
@@ -13,10 +14,11 @@ async def cancel_reservation(dto: CancelReservationDto) -> str:
         dto: Cancellation parameters including reservation_id and optional reason.
 
     Returns:
-        Confirmation of the cancellation.
+        Confirmation of the cancellation in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Cancelling reservation",
@@ -36,18 +38,24 @@ async def cancel_reservation(dto: CancelReservationDto) -> str:
         )
 
         if response is None:
-            return f"❌ Error: Unable to cancel reservation '{dto.reservation_id}'"
+            return adapter.map_error(
+                message=f"Unable to cancel reservation '{dto.reservation_id}'",
+                entity_type="reservation",
+                operation="cancel",
+            )
 
-        res_id = response.get("id", dto.reservation_id)[:8]
-
-        result = f"🔴 Reservation #{res_id} has been cancelled.\n"
-        if dto.reason:
-            result += f"   Reason: {dto.reason}\n"
-
-        return result
+        return adapter.map_success(
+            data=response,
+            entity_type="reservation",
+            operation="cancel",
+        )
 
     except Exception as e:
         logger.error(
             "Failed to cancel reservation", error=str(e), context="cancel_reservation"
         )
-        return f"❌ Error cancelling reservation: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="reservation",
+            operation="cancel",
+        )

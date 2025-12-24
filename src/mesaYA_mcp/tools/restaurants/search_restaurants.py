@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_restaurant
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.restaurants import SearchRestaurantsDto
 
 
@@ -14,10 +14,11 @@ async def search_restaurants(dto: SearchRestaurantsDto) -> str:
         dto: Search parameters including query, cuisine_type, city, and limit.
 
     Returns:
-        List of matching restaurants with basic info.
+        List of matching restaurants with basic info in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Searching restaurants",
@@ -39,7 +40,7 @@ async def search_restaurants(dto: SearchRestaurantsDto) -> str:
         response = await http_client.get("/api/v1/restaurants", params=params)
 
         if response is None:
-            return "🔍 No restaurants found matching your criteria"
+            return adapter.map_empty("restaurant", "search")
 
         if isinstance(response, dict):
             restaurants = response.get("data", [])
@@ -49,16 +50,21 @@ async def search_restaurants(dto: SearchRestaurantsDto) -> str:
             total = len(restaurants)
 
         if not restaurants:
-            return "🔍 No restaurants found matching your criteria"
+            return adapter.map_empty("restaurant", "search")
 
-        result = f"🍽️ Found {total} restaurants:\n\n"
-        for r in restaurants:
-            result += format_restaurant(r) + "\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=restaurants,
+            entity_type="restaurant",
+            operation="search",
+            count=total,
+        )
 
     except Exception as e:
         logger.error(
             "Failed to search restaurants", error=str(e), context="search_restaurants"
         )
-        return f"❌ Error searching restaurants: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="restaurant",
+            operation="search",
+        )

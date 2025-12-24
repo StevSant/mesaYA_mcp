@@ -2,6 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import ReservationIdDto
 
 
@@ -13,10 +14,11 @@ async def complete_reservation(dto: ReservationIdDto) -> str:
         dto: Reservation ID parameter.
 
     Returns:
-        Confirmation of completion.
+        Confirmation of completion in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Completing reservation",
@@ -31,11 +33,17 @@ async def complete_reservation(dto: ReservationIdDto) -> str:
         )
 
         if response is None:
-            return f"❌ Error: Unable to complete reservation '{dto.reservation_id}'"
+            return adapter.map_error(
+                message=f"Unable to complete reservation '{dto.reservation_id}'",
+                entity_type="reservation",
+                operation="complete",
+            )
 
-        res_id = response.get("id", dto.reservation_id)[:8]
-
-        return f"✅ Reservation #{res_id} has been marked as completed. Thank you!"
+        return adapter.map_success(
+            data=response,
+            entity_type="reservation",
+            operation="complete",
+        )
 
     except Exception as e:
         logger.error(
@@ -43,4 +51,8 @@ async def complete_reservation(dto: ReservationIdDto) -> str:
             error=str(e),
             context="complete_reservation",
         )
-        return f"❌ Error completing reservation: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="reservation",
+            operation="complete",
+        )

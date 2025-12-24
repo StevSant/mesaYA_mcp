@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_reservation_summary
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import ListReservationsDto
 
 
@@ -14,10 +14,11 @@ async def list_reservations(dto: ListReservationsDto) -> str:
         dto: Filter parameters including status, date_from, date_to, and limit.
 
     Returns:
-        List of reservations matching the criteria.
+        List of reservations in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Listing reservations",
@@ -40,26 +41,33 @@ async def list_reservations(dto: ListReservationsDto) -> str:
         response = await http_client.get("/api/v1/reservations", params=params)
 
         if response is None:
-            return "❌ Error: Unable to retrieve reservations"
+            return adapter.map_error(
+                message="Unable to retrieve reservations",
+                entity_type="reservation",
+                operation="list",
+            )
 
         if isinstance(response, dict):
             reservations = response.get("data", [])
-            total = response.get("pagination", {}).get("totalItems", len(reservations))
         else:
             reservations = response
-            total = len(reservations)
 
         if not reservations:
-            return "🔍 No reservations found matching your criteria"
+            return adapter.map_empty("reservation", "list")
 
-        result = f"📋 Found {total} reservations:\n\n"
-        for r in reservations:
-            result += format_reservation_summary(r) + "\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=reservations,
+            entity_type="reservation",
+            operation="list",
+            count=len(reservations),
+        )
 
     except Exception as e:
         logger.error(
             "Failed to list reservations", error=str(e), context="list_reservations"
         )
-        return f"❌ Error listing reservations: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="reservation",
+            operation="list",
+        )

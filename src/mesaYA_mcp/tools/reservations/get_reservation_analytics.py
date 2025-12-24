@@ -2,6 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import ReservationAnalyticsDto
 
 
@@ -13,10 +14,11 @@ async def get_reservation_analytics(dto: ReservationAnalyticsDto) -> str:
         dto: Analytics parameters including restaurant_id, date_from, date_to.
 
     Returns:
-        Reservation statistics including counts by status, peak times, etc.
+        Reservation statistics in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Getting reservation analytics",
@@ -40,34 +42,17 @@ async def get_reservation_analytics(dto: ReservationAnalyticsDto) -> str:
         )
 
         if response is None:
-            return "❌ Error: Unable to retrieve reservation analytics"
+            return adapter.map_error(
+                message="Unable to retrieve reservation analytics",
+                entity_type="analytics",
+                operation="get",
+            )
 
-        total = response.get("total", 0)
-        by_status = response.get("byStatus", {})
-        avg_party = response.get("averagePartySize", 0)
-        peak_hours = response.get("peakHours", [])
-        peak_days = response.get("peakDays", [])
-
-        result = "📊 **Reservation Analytics**\n\n"
-        result += f"📈 Total Reservations: {total}\n"
-        result += f"👥 Average Party Size: {avg_party:.1f}\n\n"
-
-        if by_status:
-            result += "📋 **By Status:**\n"
-            for status, count in by_status.items():
-                pct = (count / total * 100) if total > 0 else 0
-                result += f"   • {status.capitalize()}: {count} ({pct:.1f}%)\n"
-            result += "\n"
-
-        if peak_hours:
-            result += "⏰ **Peak Hours:** "
-            result += ", ".join(peak_hours[:5]) + "\n"
-
-        if peak_days:
-            result += "📅 **Peak Days:** "
-            result += ", ".join(peak_days[:3]) + "\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=response,
+            entity_type="analytics",
+            operation="get",
+        )
 
     except Exception as e:
         logger.error(
@@ -75,4 +60,8 @@ async def get_reservation_analytics(dto: ReservationAnalyticsDto) -> str:
             error=str(e),
             context="get_reservation_analytics",
         )
-        return f"❌ Error getting reservation analytics: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="analytics",
+            operation="get",
+        )

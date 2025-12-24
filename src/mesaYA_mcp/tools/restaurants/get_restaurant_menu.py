@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_menu
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.restaurants import RestaurantMenuDto
 
 
@@ -14,10 +14,11 @@ async def get_restaurant_menu(dto: RestaurantMenuDto) -> str:
         dto: Restaurant menu parameters including restaurant_id and active_only.
 
     Returns:
-        Complete menu with categories and dishes.
+        Complete menu with categories and dishes in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Getting restaurant menu",
@@ -32,18 +33,19 @@ async def get_restaurant_menu(dto: RestaurantMenuDto) -> str:
         )
 
         if response is None:
-            return f"❌ Menu not found for restaurant '{dto.restaurant_id}'"
+            return adapter.map_not_found("menu", dto.restaurant_id)
 
         menus = response if isinstance(response, list) else [response]
 
         if not menus:
-            return "📋 No menu available for this restaurant"
+            return adapter.map_empty("menu", "get")
 
-        result = ""
-        for menu in menus:
-            result += format_menu(menu) + "\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=menus,
+            entity_type="menu",
+            operation="get",
+            count=len(menus),
+        )
 
     except Exception as e:
         logger.error(
@@ -51,4 +53,8 @@ async def get_restaurant_menu(dto: RestaurantMenuDto) -> str:
             error=str(e),
             context="get_restaurant_menu",
         )
-        return f"❌ Error getting restaurant menu: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="menu",
+            operation="get",
+        )

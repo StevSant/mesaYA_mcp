@@ -2,6 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.menus import ListMenusDto
 
 
@@ -13,10 +14,11 @@ async def list_menus(dto: ListMenusDto) -> str:
         dto: Filter parameters including restaurant_id, active_only, and limit.
 
     Returns:
-        List of menus with basic information.
+        List of menus in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Listing menus",
@@ -35,38 +37,31 @@ async def list_menus(dto: ListMenusDto) -> str:
         response = await http_client.get("/api/v1/menus", params=params)
 
         if response is None:
-            return "❌ Error: Unable to retrieve menus"
+            return adapter.map_error(
+                message="Unable to retrieve menus",
+                entity_type="menu",
+                operation="list",
+            )
 
         if isinstance(response, dict):
             menus = response.get("data", [])
-            total = response.get("pagination", {}).get("totalItems", len(menus))
         else:
             menus = response
-            total = len(menus)
 
         if not menus:
-            return "🔍 No menus found"
+            return adapter.map_empty("menu", "list")
 
-        result = f"📚 Found {total} menus:\n\n"
-
-        for menu in menus:
-            name = menu.get("name", "Unnamed Menu")
-            menu_id = menu.get("id", "")[:8]
-            is_active = menu.get("isActive", False)
-            status = "✅ Active" if is_active else "⏸️ Inactive"
-            description = menu.get("description", "")[:50]
-            dishes_count = len(menu.get("dishes", []))
-
-            result += f"📖 **{name}** (#{menu_id})\n"
-            result += f"   Status: {status}\n"
-            if description:
-                result += f"   {description}...\n"
-            if dishes_count > 0:
-                result += f"   🍽️ {dishes_count} dishes\n"
-            result += "\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=menus,
+            entity_type="menu",
+            operation="list",
+            count=len(menus),
+        )
 
     except Exception as e:
         logger.error("Failed to list menus", error=str(e), context="list_menus")
-        return f"❌ Error listing menus: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="menu",
+            operation="list",
+        )

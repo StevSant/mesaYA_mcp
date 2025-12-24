@@ -2,7 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools._formatters import format_restaurant
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 
 
@@ -14,10 +14,11 @@ async def get_restaurant_info(dto: RestaurantIdDto) -> str:
         dto: Restaurant ID parameter.
 
     Returns:
-        Complete restaurant details including contact, hours, and features.
+        Complete restaurant details in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Getting restaurant info",
@@ -29,9 +30,13 @@ async def get_restaurant_info(dto: RestaurantIdDto) -> str:
         response = await http_client.get(f"/api/v1/restaurants/{dto.restaurant_id}")
 
         if response is None:
-            return f"❌ Restaurant with ID '{dto.restaurant_id}' not found"
+            return adapter.map_not_found("restaurant", dto.restaurant_id)
 
-        return format_restaurant(response)
+        return adapter.map_success(
+            data=response,
+            entity_type="restaurant",
+            operation="get",
+        )
 
     except Exception as e:
         logger.error(
@@ -39,4 +44,8 @@ async def get_restaurant_info(dto: RestaurantIdDto) -> str:
             error=str(e),
             context="get_restaurant_info",
         )
-        return f"❌ Error getting restaurant info: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="restaurant",
+            operation="get",
+        )

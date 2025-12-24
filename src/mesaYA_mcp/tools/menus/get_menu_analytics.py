@@ -2,6 +2,7 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.menus import MenuAnalyticsDto
 
 
@@ -13,10 +14,11 @@ async def get_menu_analytics(dto: MenuAnalyticsDto) -> str:
         dto: Analytics parameters including restaurant_id, date_from, date_to.
 
     Returns:
-        Menu statistics including popular dishes, revenue, etc.
+        Menu statistics in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()
+    adapter = get_response_adapter()
 
     logger.info(
         "Getting menu analytics",
@@ -36,36 +38,24 @@ async def get_menu_analytics(dto: MenuAnalyticsDto) -> str:
         response = await http_client.get("/api/v1/menus/analytics", params=params)
 
         if response is None:
-            return "❌ Error: Unable to retrieve menu analytics"
+            return adapter.map_error(
+                message="Unable to retrieve menu analytics",
+                entity_type="analytics",
+                operation="get",
+            )
 
-        total_dishes = response.get("totalDishes", 0)
-        total_menus = response.get("totalMenus", 0)
-        avg_price = response.get("averagePrice", 0)
-        popular = response.get("popularDishes", [])
-        by_category = response.get("byCategory", {})
-
-        result = "📊 **Menu Analytics**\n\n"
-        result += f"📚 Total Menus: {total_menus}\n"
-        result += f"🍽️ Total Dishes: {total_dishes}\n"
-        result += f"💰 Average Price: ${avg_price:.2f}\n\n"
-
-        if popular:
-            result += "⭐ **Most Popular Dishes:**\n"
-            for i, dish in enumerate(popular[:5], 1):
-                name = dish.get("name", "Unknown")
-                orders = dish.get("orderCount", 0)
-                result += f"   {i}. {name} ({orders} orders)\n"
-            result += "\n"
-
-        if by_category:
-            result += "📁 **By Category:**\n"
-            for category, count in by_category.items():
-                result += f"   • {category.capitalize()}: {count} dishes\n"
-
-        return result.strip()
+        return adapter.map_success(
+            data=response,
+            entity_type="analytics",
+            operation="get",
+        )
 
     except Exception as e:
         logger.error(
             "Failed to get menu analytics", error=str(e), context="get_menu_analytics"
         )
-        return f"❌ Error getting menu analytics: {str(e)}"
+        return adapter.map_error(
+            message=str(e),
+            entity_type="analytics",
+            operation="get",
+        )
