@@ -1,4 +1,4 @@
-"""Users tools package - MCP tools for user management."""
+"""User tools - one tool per file."""
 
 from mesaYA_mcp.tools.users.get_user import get_user
 from mesaYA_mcp.tools.users.list_users import list_users

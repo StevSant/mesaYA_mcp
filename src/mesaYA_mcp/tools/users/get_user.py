@@ -1,37 +1,31 @@
-"""Tool: get_user - Get user profile information."""
+"""Get user tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.users._format import format_user
+from mesaYA_mcp.tools._formatters import format_user
+from mesaYA_mcp.tools.dtos.users import UserIdDto
 
 
 @mcp.tool()
-async def get_user(user_id: str) -> str:
-    """Get detailed information about a user.
+async def get_user(dto: UserIdDto) -> str:
+    """Get detailed information about a specific user.
 
     Args:
-        user_id: The UUID of the user.
+        dto: User ID parameter.
 
     Returns:
-        User profile information including name, email, and role.
+        Complete user profile including role and preferences.
     """
     logger = get_logger()
     http_client = get_http_client()
 
-    logger.info(
-        "Getting user details",
-        context="get_user",
-        user_id=user_id,
-    )
+    logger.info("Getting user details", context="get_user", user_id=dto.user_id)
 
     try:
-        if not user_id:
-            return "❌ Error: user_id is required"
-
-        response = await http_client.get(f"/api/v1/users/{user_id}")
+        response = await http_client.get(f"/api/v1/users/{dto.user_id}")
 
         if response is None:
-            return f"❌ User with ID '{user_id}' not found"
+            return f"❌ User with ID '{dto.user_id}' not found"
 
         return format_user(response)
 

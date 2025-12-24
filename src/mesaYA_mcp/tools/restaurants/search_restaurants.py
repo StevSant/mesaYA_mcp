@@ -1,29 +1,20 @@
-"""Tool: search_restaurants - Search restaurants by criteria."""
-
-from typing import Any
+"""Search restaurants tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.restaurants._format import format_restaurant
+from mesaYA_mcp.tools._formatters import format_restaurant
+from mesaYA_mcp.tools.dtos.restaurants import SearchRestaurantsDto
 
 
 @mcp.tool()
-async def search_restaurants(
-    query: str = "",
-    cuisine: str = "",
-    location: str = "",
-    limit: int = 10,
-) -> str:
+async def search_restaurants(dto: SearchRestaurantsDto) -> str:
     """Search for restaurants by name, cuisine type, or location.
 
     Args:
-        query: Search term for restaurant name (optional).
-        cuisine: Filter by cuisine type like 'Italian', 'Mexican', etc. (optional).
-        location: Filter by city or address (optional).
-        limit: Maximum number of results to return (default 10).
+        dto: Search parameters including query, cuisine_type, city, and limit.
 
     Returns:
-        Formatted list of matching restaurants with details.
+        List of matching restaurants with basic info.
     """
     logger = get_logger()
     http_client = get_http_client()
@@ -31,24 +22,24 @@ async def search_restaurants(
     logger.info(
         "Searching restaurants",
         context="search_restaurants",
-        query=query,
-        cuisine=cuisine,
-        location=location,
+        query=dto.query,
+        cuisine_type=dto.cuisine_type,
+        city=dto.city,
     )
 
     try:
-        params: dict[str, Any] = {"limit": limit}
-        if query:
-            params["q"] = query
-        if cuisine:
-            params["cuisineType"] = cuisine
-        if location:
-            params["city"] = location
+        params: dict = {"limit": dto.limit}
+        if dto.query:
+            params["q"] = dto.query
+        if dto.cuisine_type:
+            params["cuisineType"] = dto.cuisine_type
+        if dto.city:
+            params["city"] = dto.city
 
         response = await http_client.get("/api/v1/restaurants", params=params)
 
         if response is None:
-            return "❌ Error: Unable to connect to the restaurant service"
+            return "🔍 No restaurants found matching your criteria"
 
         if isinstance(response, dict):
             restaurants = response.get("data", [])
@@ -60,9 +51,9 @@ async def search_restaurants(
         if not restaurants:
             return "🔍 No restaurants found matching your criteria"
 
-        result = f"✅ Found {total} restaurants:\n\n"
-        for r in restaurants[:limit]:
-            result += format_restaurant(r) + "\n\n"
+        result = f"🍽️ Found {total} restaurants:\n\n"
+        for r in restaurants:
+            result += format_restaurant(r) + "\n"
 
         return result.strip()
 

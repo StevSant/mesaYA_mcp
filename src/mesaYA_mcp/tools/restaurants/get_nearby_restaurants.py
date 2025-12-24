@@ -1,27 +1,20 @@
-"""Tool: get_nearby_restaurants - Find restaurants near a location."""
+"""Get nearby restaurants tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.restaurants._format import format_restaurant
+from mesaYA_mcp.tools._formatters import format_restaurant
+from mesaYA_mcp.tools.dtos.restaurants import NearbyRestaurantsDto
 
 
 @mcp.tool()
-async def get_nearby_restaurants(
-    latitude: float,
-    longitude: float,
-    radius_km: float = 5.0,
-    limit: int = 10,
-) -> str:
-    """Find restaurants near a specific geographic location.
+async def get_nearby_restaurants(dto: NearbyRestaurantsDto) -> str:
+    """Find restaurants near a geographic location.
 
     Args:
-        latitude: User's latitude coordinate.
-        longitude: User's longitude coordinate.
-        radius_km: Search radius in kilometers (default 5km, max 100km).
-        limit: Maximum number of results (default 10, max 50).
+        dto: Location parameters including latitude, longitude, radius_km, and limit.
 
     Returns:
-        List of nearby restaurants with distance information.
+        List of nearby restaurants sorted by distance.
     """
     logger = get_logger()
     http_client = get_http_client()
@@ -29,36 +22,39 @@ async def get_nearby_restaurants(
     logger.info(
         "Finding nearby restaurants",
         context="get_nearby_restaurants",
-        latitude=latitude,
-        longitude=longitude,
-        radius_km=radius_km,
+        latitude=dto.latitude,
+        longitude=dto.longitude,
+        radius_km=dto.radius_km,
     )
 
     try:
         params = {
-            "latitude": latitude,
-            "longitude": longitude,
-            "radiusKm": radius_km,
-            "limit": limit,
+            "lat": dto.latitude,
+            "lng": dto.longitude,
+            "radius": dto.radius_km,
+            "limit": dto.limit,
         }
 
         response = await http_client.get("/api/v1/restaurants/nearby", params=params)
 
         if response is None:
-            return "❌ Error: Unable to find nearby restaurants"
+            return f"🔍 No restaurants found within {dto.radius_km}km of your location"
 
-        restaurants = (
-            response if isinstance(response, list) else response.get("data", [])
-        )
+        if isinstance(response, dict):
+            restaurants = response.get("data", [])
+        else:
+            restaurants = response
 
         if not restaurants:
-            return f"🔍 No restaurants found within {radius_km}km of your location"
+            return f"🔍 No restaurants found within {dto.radius_km}km of your location"
 
-        result = f"✅ Found {len(restaurants)} restaurants nearby:\n\n"
+        result = f"📍 Found {len(restaurants)} restaurants nearby:\n\n"
         for r in restaurants:
-            distance = r.get("distance", "N/A")
+            distance = r.get("distance", 0)
             result += format_restaurant(r)
-            result += f"\n   📏 Distance: {distance}km\n\n"
+            if distance:
+                result += f"   📏 Distance: {distance:.1f} km\n"
+            result += "\n"
 
         return result.strip()
 

@@ -3,6 +3,10 @@
 This module provides the entry point for the MCP server, offering tools
 for interacting with the MesaYA restaurant reservation platform.
 
+Supports two transport modes:
+- **stdio**: Standard input/output (default, for local tools)
+- **sse**: Server-Sent Events via HTTP (for MCP Gateway)
+
 ## Available Tools
 
 ### Restaurant Tools (7)
@@ -39,8 +43,9 @@ for interacting with the MesaYA restaurant reservation platform.
 - get_user_analytics: Get user statistics
 """
 
+import sys
 from mesaYA_mcp.server import mcp
-from mesaYA_mcp.shared.core import get_logger
+from mesaYA_mcp.shared.core import get_logger, get_settings
 
 # Import all tool modules to register them with the MCP server
 # The @mcp.tool() decorators execute on import, registering each tool
@@ -48,16 +53,52 @@ import mesaYA_mcp.tools  # noqa: F401
 
 
 def main() -> None:
-    """Main entry point for the MCP server."""
+    """Main entry point for the MCP server.
+
+    Supports two transport modes:
+    - stdio: Standard input/output (default)
+    - sse: HTTP Server-Sent Events (MCP Gateway mode)
+
+    Transport mode can be set via:
+    - Environment variable: MCP_TRANSPORT=sse
+    - Command line argument: --sse or --gateway
+    """
     logger = get_logger()
-    logger.info("Starting mesaYA_mcp MCP server...", context="main")
+    settings = get_settings()
+
+    # Check for command line transport override
+    transport = settings.mcp_transport
+    if "--sse" in sys.argv or "--gateway" in sys.argv:
+        transport = "sse"
+    elif "--stdio" in sys.argv:
+        transport = "stdio"
+
+    logger.info(
+        f"Starting mesaYA_mcp MCP server (transport: {transport})",
+        context="main",
+    )
     logger.info(
         "Registered tool categories: restaurants, reservations, menus, users",
         context="main",
     )
 
     try:
-        mcp.run(transport="stdio")
+        if transport == "sse":
+            # MCP Gateway mode - HTTP/SSE transport
+            logger.info(
+                f"MCP Gateway listening on http://{settings.mcp_gateway_host}:{settings.mcp_gateway_port}",
+                context="main",
+            )
+            mcp.run(
+                transport="sse",
+                sse_path="/sse",
+                message_path="/messages",
+                host=settings.mcp_gateway_host,
+                port=settings.mcp_gateway_port,
+            )
+        else:
+            # Standard stdio transport
+            mcp.run(transport="stdio")
     except Exception as e:
         logger.error("Server error", error=str(e), context="main")
         raise

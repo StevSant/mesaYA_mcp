@@ -1,18 +1,19 @@
-"""Tool: get_restaurant_sections - Get restaurant floor plan sections."""
+"""Get restaurant sections tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 
 
 @mcp.tool()
-async def get_restaurant_sections(restaurant_id: str) -> str:
-    """Get the sections/areas of a restaurant (floor plan).
+async def get_restaurant_sections(dto: RestaurantIdDto) -> str:
+    """Get the floor plan sections of a restaurant.
 
     Args:
-        restaurant_id: The UUID of the restaurant.
+        dto: Restaurant ID parameter.
 
     Returns:
-        List of restaurant sections with capacity information.
+        List of sections (dining areas) with their table counts.
     """
     logger = get_logger()
     http_client = get_http_client()
@@ -20,35 +21,37 @@ async def get_restaurant_sections(restaurant_id: str) -> str:
     logger.info(
         "Getting restaurant sections",
         context="get_restaurant_sections",
-        restaurant_id=restaurant_id,
+        restaurant_id=dto.restaurant_id,
     )
 
     try:
-        if not restaurant_id:
-            return "❌ Error: restaurant_id is required"
-
-        response = await http_client.get(f"/api/v1/sections/restaurant/{restaurant_id}")
+        response = await http_client.get(
+            f"/api/v1/restaurants/{dto.restaurant_id}/sections"
+        )
 
         if response is None:
-            return f"❌ Could not retrieve sections for restaurant '{restaurant_id}'"
+            return f"❌ Sections not found for restaurant '{dto.restaurant_id}'"
 
-        sections = response.get("data", []) if isinstance(response, dict) else response
+        sections = response if isinstance(response, list) else response.get("data", [])
 
         if not sections:
             return "🏠 No sections configured for this restaurant"
 
         result = "🏠 **Restaurant Sections:**\n\n"
-        for section in sections:
-            name = section.get("name", "Unknown")
-            description = section.get("description", "")
-            capacity = section.get("capacity", "N/A")
-            is_active = section.get("active", True)
 
-            status = "🟢" if is_active else "🔴"
-            result += f"{status} **{name}**\n"
+        for section in sections:
+            name = section.get("name", "Unnamed Section")
+            section_id = section.get("id", "")[:8]
+            description = section.get("description", "")
+            tables = section.get("tables", [])
+            table_count = len(tables) if isinstance(tables, list) else 0
+            is_active = section.get("isActive", True)
+
+            status = "✅" if is_active else "⏸️"
+            result += f"{status} **{name}** (#{section_id})\n"
             if description:
                 result += f"   {description}\n"
-            result += f"   Capacity: {capacity} people\n\n"
+            result += f"   🪑 Tables: {table_count}\n\n"
 
         return result.strip()
 

@@ -1,21 +1,16 @@
-"""Tool: get_reservation_analytics - Get reservation statistics."""
+"""Get reservation analytics tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.tools.dtos.reservations import ReservationAnalyticsDto
 
 
 @mcp.tool()
-async def get_reservation_analytics(
-    restaurant_id: str = "",
-    date_from: str = "",
-    date_to: str = "",
-) -> str:
+async def get_reservation_analytics(dto: ReservationAnalyticsDto) -> str:
     """Get reservation analytics and statistics.
 
     Args:
-        restaurant_id: Optional restaurant UUID to filter by.
-        date_from: Start date for analytics period (YYYY-MM-DD).
-        date_to: End date for analytics period (YYYY-MM-DD).
+        dto: Analytics parameters including restaurant_id, date_from, date_to.
 
     Returns:
         Reservation statistics including counts by status, peak times, etc.
@@ -26,19 +21,19 @@ async def get_reservation_analytics(
     logger.info(
         "Getting reservation analytics",
         context="get_reservation_analytics",
-        restaurant_id=restaurant_id,
-        date_from=date_from,
-        date_to=date_to,
+        restaurant_id=dto.restaurant_id,
+        date_from=dto.date_from,
+        date_to=dto.date_to,
     )
 
     try:
         params: dict = {}
-        if restaurant_id:
-            params["restaurantId"] = restaurant_id
-        if date_from:
-            params["dateFrom"] = date_from
-        if date_to:
-            params["dateTo"] = date_to
+        if dto.restaurant_id:
+            params["restaurantId"] = dto.restaurant_id
+        if dto.date_from:
+            params["dateFrom"] = dto.date_from
+        if dto.date_to:
+            params["dateTo"] = dto.date_to
 
         response = await http_client.get(
             "/api/v1/reservations/analytics", params=params

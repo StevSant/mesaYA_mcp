@@ -1,24 +1,19 @@
-"""Tool: get_user_analytics - Get user activity analytics."""
+"""Get user analytics tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.tools.dtos.users import UserAnalyticsDto
 
 
 @mcp.tool()
-async def get_user_analytics(
-    user_id: str = "",
-    date_from: str = "",
-    date_to: str = "",
-) -> str:
-    """Get user activity analytics and statistics.
+async def get_user_analytics(dto: UserAnalyticsDto) -> str:
+    """Get user analytics and statistics.
 
     Args:
-        user_id: Optional user UUID for individual analytics.
-        date_from: Start date for analytics period (YYYY-MM-DD).
-        date_to: End date for analytics period (YYYY-MM-DD).
+        dto: Analytics parameters including restaurant_id, date_from, date_to.
 
     Returns:
-        User activity statistics including reservation counts, favorite restaurants, etc.
+        User statistics including counts by role, activity metrics, etc.
     """
     logger = get_logger()
     http_client = get_http_client()
@@ -26,67 +21,47 @@ async def get_user_analytics(
     logger.info(
         "Getting user analytics",
         context="get_user_analytics",
-        user_id=user_id,
-        date_from=date_from,
-        date_to=date_to,
+        restaurant_id=dto.restaurant_id,
     )
 
     try:
         params: dict = {}
-        if user_id:
-            params["userId"] = user_id
-        if date_from:
-            params["dateFrom"] = date_from
-        if date_to:
-            params["dateTo"] = date_to
+        if dto.restaurant_id:
+            params["restaurantId"] = dto.restaurant_id
+        if dto.date_from:
+            params["dateFrom"] = dto.date_from
+        if dto.date_to:
+            params["dateTo"] = dto.date_to
 
         response = await http_client.get("/api/v1/users/analytics", params=params)
 
         if response is None:
             return "❌ Error: Unable to retrieve user analytics"
 
-        total_users = response.get("totalUsers", 0)
-        new_users = response.get("newUsers", 0)
-        active_users = response.get("activeUsers", 0)
+        total = response.get("totalUsers", 0)
         by_role = response.get("byRole", {})
+        active = response.get("activeUsers", 0)
+        new_this_month = response.get("newThisMonth", 0)
         top_customers = response.get("topCustomers", [])
 
         result = "📊 **User Analytics**\n\n"
+        result += f"👥 Total Users: {total}\n"
+        result += f"✅ Active Users: {active}\n"
+        result += f"🆕 New This Month: {new_this_month}\n\n"
 
-        if user_id:
-            reservations = response.get("totalReservations", 0)
-            completed = response.get("completedReservations", 0)
-            cancelled = response.get("cancelledReservations", 0)
-            fav_restaurants = response.get("favoriteRestaurants", [])
+        if by_role:
+            result += "📋 **By Role:**\n"
+            for role, count in by_role.items():
+                pct = (count / total * 100) if total > 0 else 0
+                result += f"   • {role.capitalize()}: {count} ({pct:.1f}%)\n"
+            result += "\n"
 
-            result += f"📋 Total Reservations: {reservations}\n"
-            result += f"✅ Completed: {completed}\n"
-            result += f"❌ Cancelled: {cancelled}\n"
-
-            if fav_restaurants:
-                result += "\n🏆 **Favorite Restaurants:**\n"
-                for i, rest in enumerate(fav_restaurants[:5], 1):
-                    name = rest.get("name", "Unknown")
-                    visits = rest.get("visitCount", 0)
-                    result += f"   {i}. {name} ({visits} visits)\n"
-        else:
-            result += f"👥 Total Users: {total_users}\n"
-            result += f"🆕 New Users: {new_users}\n"
-            result += f"🟢 Active Users: {active_users}\n\n"
-
-            if by_role:
-                result += "📁 **By Role:**\n"
-                for role, count in by_role.items():
-                    pct = (count / total_users * 100) if total_users > 0 else 0
-                    result += f"   • {role.capitalize()}: {count} ({pct:.1f}%)\n"
-                result += "\n"
-
-            if top_customers:
-                result += "🏆 **Top Customers:**\n"
-                for i, customer in enumerate(top_customers[:5], 1):
-                    name = customer.get("name", "Unknown")
-                    reservations = customer.get("reservationCount", 0)
-                    result += f"   {i}. {name} ({reservations} reservations)\n"
+        if top_customers:
+            result += "⭐ **Top Customers:**\n"
+            for i, cust in enumerate(top_customers[:5], 1):
+                name = cust.get("name", "Unknown")
+                reservations = cust.get("reservationCount", 0)
+                result += f"   {i}. {name} ({reservations} reservations)\n"
 
         return result.strip()
 

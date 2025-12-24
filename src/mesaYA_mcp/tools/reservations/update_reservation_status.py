@@ -1,32 +1,17 @@
-"""Tool: update_reservation_status - Update reservation status."""
+"""Update reservation status tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.reservations._format import format_reservation
-
-
-VALID_STATUSES = [
-    "pending",
-    "confirmed",
-    "cancelled",
-    "completed",
-    "no_show",
-    "checked_in",
-]
+from mesaYA_mcp.tools._formatters import format_reservation
+from mesaYA_mcp.tools.dtos.reservations import UpdateReservationStatusDto
 
 
 @mcp.tool()
-async def update_reservation_status(
-    reservation_id: str,
-    new_status: str,
-    reason: str = "",
-) -> str:
+async def update_reservation_status(dto: UpdateReservationStatusDto) -> str:
     """Update the status of a reservation.
 
     Args:
-        reservation_id: UUID of the reservation to update.
-        new_status: New status (pending, confirmed, cancelled, completed, no_show, checked_in).
-        reason: Optional reason for the status change.
+        dto: Status update parameters including reservation_id, new_status, and reason.
 
     Returns:
         Confirmation of the status update.
@@ -37,32 +22,24 @@ async def update_reservation_status(
     logger.info(
         "Updating reservation status",
         context="update_reservation_status",
-        reservation_id=reservation_id,
-        new_status=new_status,
+        reservation_id=dto.reservation_id,
+        new_status=dto.new_status,
     )
 
     try:
-        if not reservation_id:
-            return "❌ Error: reservation_id is required"
-
-        if new_status.lower() not in VALID_STATUSES:
-            return (
-                f"❌ Error: Invalid status. Must be one of: {', '.join(VALID_STATUSES)}"
-            )
-
-        payload = {"status": new_status.lower()}
-        if reason:
-            payload["reason"] = reason
+        payload = {"status": dto.new_status}
+        if dto.reason:
+            payload["reason"] = dto.reason
 
         response = await http_client.patch(
-            f"/api/v1/reservations/{reservation_id}/status",
+            f"/api/v1/reservations/{dto.reservation_id}/status",
             json=payload,
         )
 
         if response is None:
-            return f"❌ Error: Unable to update reservation '{reservation_id}'"
+            return f"❌ Error: Unable to update reservation '{dto.reservation_id}'"
 
-        result = f"✅ Reservation status updated to '{new_status}'!\n\n"
+        result = f"✅ Reservation status updated to '{dto.new_status}'!\n\n"
         result += format_reservation(response)
 
         return result

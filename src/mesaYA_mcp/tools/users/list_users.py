@@ -1,24 +1,17 @@
-"""Tool: list_users - List users with filters."""
+"""List users tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.users._format import format_user_summary
+from mesaYA_mcp.tools._formatters import format_user_summary
+from mesaYA_mcp.tools.dtos.users import ListUsersDto
 
 
 @mcp.tool()
-async def list_users(
-    role: str = "",
-    active_only: bool = True,
-    restaurant_id: str = "",
-    limit: int = 20,
-) -> str:
+async def list_users(dto: ListUsersDto) -> str:
     """List users with optional filters.
 
     Args:
-        role: Filter by role (admin, manager, staff, customer).
-        active_only: If True, only show active users (default True).
-        restaurant_id: Filter users by restaurant association.
-        limit: Maximum number of results (default 20, max 100).
+        dto: Filter parameters including role, active_only, search, and limit.
 
     Returns:
         List of users matching the criteria.
@@ -29,20 +22,18 @@ async def list_users(
     logger.info(
         "Listing users",
         context="list_users",
-        role=role,
-        active_only=active_only,
-        restaurant_id=restaurant_id,
+        role=dto.role,
+        active_only=dto.active_only,
     )
 
     try:
-        params: dict = {"limit": min(limit, 100)}
-
-        if role:
-            params["role"] = role
-        if active_only:
-            params["active"] = True
-        if restaurant_id:
-            params["restaurantId"] = restaurant_id
+        params: dict = {"limit": dto.limit}
+        if dto.role:
+            params["role"] = dto.role
+        if dto.active_only:
+            params["isActive"] = True
+        if dto.search:
+            params["q"] = dto.search
 
         response = await http_client.get("/api/v1/users", params=params)
 
@@ -57,10 +48,11 @@ async def list_users(
             total = len(users)
 
         if not users:
-            return "🔍 No users found matching your criteria"
+            return "🔍 No users found"
 
         result = f"👥 Found {total} users:\n\n"
-        for user in users[:limit]:
+
+        for user in users:
             result += format_user_summary(user) + "\n"
 
         return result.strip()

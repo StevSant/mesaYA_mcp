@@ -5,12 +5,46 @@ MCP (Model Context Protocol) server for the MesaYA restaurant reservation platfo
 ## Quick Start
 
 ```bash
-# Run MCP server
+# Run MCP server (stdio transport - for local tools)
 uv run app
+
+# Run MCP Gateway (HTTP/SSE transport - for web clients)
+uv run gateway
+
+# Or with explicit flags
+uv run app --sse      # SSE mode
+uv run app --stdio    # stdio mode (default)
 
 # Inspect with MCP inspector
 npx @modelcontextprotocol/inspector uv --directory . run app --port 3333
 ```
+
+## Transport Modes
+
+### stdio (default)
+
+Standard input/output transport for local tool integration.
+
+```bash
+uv run app
+```
+
+### SSE (MCP Gateway)
+
+HTTP/SSE transport for web applications and remote access.
+
+```bash
+uv run gateway
+
+# Or with environment variables
+MCP_GATEWAY_HOST=0.0.0.0 MCP_GATEWAY_PORT=8000 uv run gateway
+```
+
+**Gateway Endpoints:**
+
+- `GET /sse` - SSE endpoint for MCP communication
+- `POST /messages` - Message endpoint for MCP commands
+- `GET /health` - Health check
 
 ## Project Structure
 
@@ -20,26 +54,19 @@ mesaYA_mcp/
 │   └── mesaYA_mcp/
 │       ├── __init__.py           # Package initialization
 │       ├── __main__.py           # MCP server entry point
-│       ├── features/             # Domain-specific tools
-│       │   ├── restaurants/      # Restaurant-related tools
-│       │   │   ├── __init__.py
-│       │   │   └── tools.py
-│       │   └── reservations/     # Reservation-related tools
-│       │       ├── __init__.py
-│       │       └── tools.py
+│       ├── server.py             # FastMCP instance
+│       ├── gateway.py            # MCP Gateway entry point
+│       ├── tools/                # Tool modules (LangChain pattern)
+│       │   ├── __init__.py       # Tool registration
+│       │   ├── _formatters.py    # Shared formatting helpers
+│       │   ├── restaurants.py    # 7 restaurant tools
+│       │   ├── reservations.py   # 10 reservation tools
+│       │   ├── menus.py          # 5 menu tools
+│       │   └── users.py          # 3 user tools
 │       └── shared/               # Shared modules
 │           ├── application/      # Application layer (ports)
-│           │   └── ports/
-│           │       ├── __init__.py
-│           │       └── logger_port.py
 │           ├── core/             # Core configuration
-│           │   ├── __init__.py
-│           │   ├── config.py
-│           │   └── container.py
 │           └── infrastructure/   # Infrastructure layer (adapters)
-│               └── adapters/
-│                   ├── __init__.py
-│                   └── logger_adapter.py
 ├── .env.template
 ├── pyproject.toml
 └── README.md
@@ -51,24 +78,27 @@ This project follows a **Hexagonal Architecture** (Ports and Adapters):
 
 - **Ports**: Abstract interfaces in `shared/application/ports/`
 - **Adapters**: Concrete implementations in `shared/infrastructure/adapters/`
-- **Features**: Domain-specific tools organized by feature
+- **Tools**: Flat structure following LangChain's recommended pattern
 
-### Logger Port/Adapter Pattern
+### LangChain MCP Pattern
 
-The logger follows the same pattern as other dependencies:
+Tools are organized in flat modules following LangChain's recommendation:
 
 ```python
-# Port (abstract interface)
-class LoggerPort(ABC):
-    @abstractmethod
-    def info(self, message: str, context: str | None = None, **meta: Any) -> None:
-        pass
-    # ... other methods
+# server.py - Single MCP instance
+from mcp.server.fastmcp import FastMCP
+mcp = FastMCP("mesaYA_mcp")
 
-# Adapter (concrete implementation)
-class LoggerAdapter(LoggerPort):
-    def info(self, message: str, context: str | None = None, **meta: Any) -> None:
-        self._log(logging.INFO, message, context, **meta)
+# tools/restaurants.py - Import and decorate
+from mesaYA_mcp.server import mcp
+
+@mcp.tool()
+async def search_restaurants(...):
+    ...
+
+# __main__.py - Import tools, run server
+import mesaYA_mcp.tools  # Registers all tools
+mcp.run()
 ```
 
 ## Installation

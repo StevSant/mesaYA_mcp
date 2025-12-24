@@ -1,16 +1,17 @@
-"""Tool: get_reservation - Get details of a specific reservation."""
+"""Get reservation tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.reservations._format import format_reservation
+from mesaYA_mcp.tools._formatters import format_reservation
+from mesaYA_mcp.tools.dtos.reservations import ReservationIdDto
 
 
 @mcp.tool()
-async def get_reservation(reservation_id: str) -> str:
+async def get_reservation(dto: ReservationIdDto) -> str:
     """Get detailed information about a specific reservation.
 
     Args:
-        reservation_id: The UUID of the reservation.
+        dto: Reservation ID parameter.
 
     Returns:
         Complete reservation details including status, time, and guest info.
@@ -21,17 +22,14 @@ async def get_reservation(reservation_id: str) -> str:
     logger.info(
         "Getting reservation details",
         context="get_reservation",
-        reservation_id=reservation_id,
+        reservation_id=dto.reservation_id,
     )
 
     try:
-        if not reservation_id:
-            return "❌ Error: reservation_id is required"
-
-        response = await http_client.get(f"/api/v1/reservations/{reservation_id}")
+        response = await http_client.get(f"/api/v1/reservations/{dto.reservation_id}")
 
         if response is None:
-            return f"❌ Reservation with ID '{reservation_id}' not found"
+            return f"❌ Reservation with ID '{dto.reservation_id}' not found"
 
         return format_reservation(response)
 

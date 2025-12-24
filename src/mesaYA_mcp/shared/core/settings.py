@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     backend_api_timeout: float = 30.0
     backend_api_key: str = ""
 
+    # MCP Gateway configuration (HTTP/SSE transport)
+    mcp_gateway_host: str = "0.0.0.0"
+    mcp_gateway_port: int = 8000
+    mcp_transport: str = "stdio"  # "stdio" or "sse"
+
     @computed_field
     @property
     def backend_api_url(self) -> str:

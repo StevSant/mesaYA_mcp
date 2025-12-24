@@ -1,28 +1,17 @@
-"""Tool: search_dishes - Search for dishes across menus."""
+"""Search dishes tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.menus._format import format_dish
+from mesaYA_mcp.tools._formatters import format_dish
+from mesaYA_mcp.tools.dtos.menus import SearchDishesDto
 
 
 @mcp.tool()
-async def search_dishes(
-    query: str = "",
-    category: str = "",
-    dietary: str = "",
-    price_max: float = 0,
-    restaurant_id: str = "",
-    limit: int = 20,
-) -> str:
-    """Search for dishes across all menus.
+async def search_dishes(dto: SearchDishesDto) -> str:
+    """Search for dishes across menus.
 
     Args:
-        query: Search term for dish name or description.
-        category: Filter by category (appetizer, main, dessert, etc.).
-        dietary: Filter by dietary info (vegan, vegetarian, gluten-free, etc.).
-        price_max: Maximum price filter.
-        restaurant_id: Optional restaurant UUID to limit search.
-        limit: Maximum number of results (default 20).
+        dto: Search parameters including query, restaurant_id, category, max_price, vegetarian, limit.
 
     Returns:
         List of matching dishes with details.
@@ -33,29 +22,25 @@ async def search_dishes(
     logger.info(
         "Searching dishes",
         context="search_dishes",
-        query=query,
-        category=category,
-        dietary=dietary,
+        query=dto.query,
+        restaurant_id=dto.restaurant_id,
     )
 
     try:
-        params: dict = {"limit": limit}
+        params: dict = {"q": dto.query, "limit": dto.limit}
+        if dto.restaurant_id:
+            params["restaurantId"] = dto.restaurant_id
+        if dto.category:
+            params["category"] = dto.category
+        if dto.max_price > 0:
+            params["maxPrice"] = dto.max_price
+        if dto.vegetarian:
+            params["vegetarian"] = True
 
-        if query:
-            params["q"] = query
-        if category:
-            params["category"] = category
-        if dietary:
-            params["dietary"] = dietary
-        if price_max > 0:
-            params["priceMax"] = price_max
-        if restaurant_id:
-            params["restaurantId"] = restaurant_id
-
-        response = await http_client.get("/api/v1/dishes", params=params)
+        response = await http_client.get("/api/v1/dishes/search", params=params)
 
         if response is None:
-            return "❌ Error: Unable to search dishes"
+            return f"🔍 No dishes found matching '{dto.query}'"
 
         if isinstance(response, dict):
             dishes = response.get("data", [])
@@ -65,10 +50,11 @@ async def search_dishes(
             total = len(dishes)
 
         if not dishes:
-            return "🔍 No dishes found matching your criteria"
+            return f"🔍 No dishes found matching '{dto.query}'"
 
-        result = f"🍽️ Found {total} dishes:\n\n"
-        for dish in dishes[:limit]:
+        result = f"🍽️ Found {total} dishes matching '{dto.query}':\n\n"
+
+        for dish in dishes:
             result += format_dish(dish) + "\n"
 
         return result.strip()

@@ -1,19 +1,16 @@
-"""Tool: cancel_reservation - Cancel a reservation."""
+"""Cancel reservation tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.tools.dtos.reservations import CancelReservationDto
 
 
 @mcp.tool()
-async def cancel_reservation(
-    reservation_id: str,
-    reason: str = "",
-) -> str:
+async def cancel_reservation(dto: CancelReservationDto) -> str:
     """Cancel a reservation.
 
     Args:
-        reservation_id: UUID of the reservation to cancel.
-        reason: Optional reason for cancellation.
+        dto: Cancellation parameters including reservation_id and optional reason.
 
     Returns:
         Confirmation of the cancellation.
@@ -24,31 +21,28 @@ async def cancel_reservation(
     logger.info(
         "Cancelling reservation",
         context="cancel_reservation",
-        reservation_id=reservation_id,
-        reason=reason,
+        reservation_id=dto.reservation_id,
+        reason=dto.reason,
     )
 
     try:
-        if not reservation_id:
-            return "❌ Error: reservation_id is required"
-
         payload = {}
-        if reason:
-            payload["reason"] = reason
+        if dto.reason:
+            payload["reason"] = dto.reason
 
         response = await http_client.patch(
-            f"/api/v1/reservations/{reservation_id}/cancel",
+            f"/api/v1/reservations/{dto.reservation_id}/cancel",
             json=payload,
         )
 
         if response is None:
-            return f"❌ Error: Unable to cancel reservation '{reservation_id}'"
+            return f"❌ Error: Unable to cancel reservation '{dto.reservation_id}'"
 
-        res_id = response.get("id", reservation_id)[:8]
+        res_id = response.get("id", dto.reservation_id)[:8]
 
         result = f"🔴 Reservation #{res_id} has been cancelled.\n"
-        if reason:
-            result += f"   Reason: {reason}\n"
+        if dto.reason:
+            result += f"   Reason: {dto.reason}\n"
 
         return result
 

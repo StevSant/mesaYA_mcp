@@ -1,4 +1,4 @@
-"""Menus tools package - MCP tools for menu and dish management."""
+"""Menu tools - one tool per file."""
 
 from mesaYA_mcp.tools.menus.get_menu import get_menu
 from mesaYA_mcp.tools.menus.list_menus import list_menus

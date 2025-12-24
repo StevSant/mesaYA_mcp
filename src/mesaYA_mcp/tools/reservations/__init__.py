@@ -1,4 +1,4 @@
-"""Reservations tools package - MCP tools for reservation management."""
+"""Reservation tools - one tool per file."""
 
 from mesaYA_mcp.tools.reservations.create_reservation import create_reservation
 from mesaYA_mcp.tools.reservations.get_reservation import get_reservation

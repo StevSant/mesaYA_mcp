@@ -1,24 +1,17 @@
-"""Tool: list_reservations - List reservations with filters."""
+"""List reservations tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.reservations._format import format_reservation_summary
+from mesaYA_mcp.tools._formatters import format_reservation_summary
+from mesaYA_mcp.tools.dtos.reservations import ListReservationsDto
 
 
 @mcp.tool()
-async def list_reservations(
-    status: str = "",
-    date_from: str = "",
-    date_to: str = "",
-    limit: int = 20,
-) -> str:
+async def list_reservations(dto: ListReservationsDto) -> str:
     """List reservations with optional filters.
 
     Args:
-        status: Filter by status: pending, confirmed, cancelled, completed, no_show.
-        date_from: Start date filter in YYYY-MM-DD format.
-        date_to: End date filter in YYYY-MM-DD format.
-        limit: Maximum number of results (default 20, max 100).
+        dto: Filter parameters including status, date_from, date_to, and limit.
 
     Returns:
         List of reservations matching the criteria.
@@ -29,20 +22,20 @@ async def list_reservations(
     logger.info(
         "Listing reservations",
         context="list_reservations",
-        status=status,
-        date_from=date_from,
-        date_to=date_to,
+        status=dto.status,
+        date_from=dto.date_from,
+        date_to=dto.date_to,
     )
 
     try:
-        params: dict = {"limit": min(limit, 100)}
+        params: dict = {"limit": dto.limit}
 
-        if status:
-            params["status"] = status
-        if date_from:
-            params["dateFrom"] = date_from
-        if date_to:
-            params["dateTo"] = date_to
+        if dto.status:
+            params["status"] = dto.status
+        if dto.date_from:
+            params["dateFrom"] = dto.date_from
+        if dto.date_to:
+            params["dateTo"] = dto.date_to
 
         response = await http_client.get("/api/v1/reservations", params=params)
 

@@ -1,24 +1,17 @@
-"""Tool: get_restaurant_reservations - Get reservations for a specific restaurant."""
+"""Get restaurant reservations tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.tools.reservations._format import format_reservation_summary
+from mesaYA_mcp.tools._formatters import format_reservation_summary
+from mesaYA_mcp.tools.dtos.reservations import RestaurantReservationsDto
 
 
 @mcp.tool()
-async def get_restaurant_reservations(
-    restaurant_id: str,
-    date: str = "",
-    status: str = "",
-    limit: int = 50,
-) -> str:
+async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
     """Get all reservations for a specific restaurant.
 
     Args:
-        restaurant_id: UUID of the restaurant.
-        date: Optional date filter in YYYY-MM-DD format.
-        status: Optional status filter.
-        limit: Maximum number of results (default 50).
+        dto: Restaurant reservations parameters including restaurant_id, date, status, limit.
 
     Returns:
         List of reservations for the restaurant.
@@ -29,29 +22,24 @@ async def get_restaurant_reservations(
     logger.info(
         "Getting restaurant reservations",
         context="get_restaurant_reservations",
-        restaurant_id=restaurant_id,
-        date=date,
+        restaurant_id=dto.restaurant_id,
+        date=dto.date,
     )
 
     try:
-        if not restaurant_id:
-            return "❌ Error: restaurant_id is required"
-
-        params: dict = {"limit": limit}
-        if date:
-            params["date"] = date
-        if status:
-            params["status"] = status
+        params: dict = {"limit": dto.limit}
+        if dto.date:
+            params["date"] = dto.date
+        if dto.status:
+            params["status"] = dto.status
 
         response = await http_client.get(
-            f"/api/v1/reservations/restaurant/{restaurant_id}",
+            f"/api/v1/reservations/restaurant/{dto.restaurant_id}",
             params=params,
         )
 
         if response is None:
-            return (
-                f"❌ Could not retrieve reservations for restaurant '{restaurant_id}'"
-            )
+            return f"❌ Could not retrieve reservations for restaurant '{dto.restaurant_id}'"
 
         if isinstance(response, dict):
             reservations = response.get("data", [])
@@ -61,7 +49,7 @@ async def get_restaurant_reservations(
             total = len(reservations)
 
         if not reservations:
-            filter_msg = f" for date {date}" if date else ""
+            filter_msg = f" for date {dto.date}" if dto.date else ""
             return f"🔍 No reservations found{filter_msg}"
 
         result = f"📋 Found {total} reservations:\n\n"

@@ -1,15 +1,16 @@
-"""Tool: get_section_tables - Get tables in a restaurant section."""
+"""Get section tables tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.tools.dtos.restaurants import SectionIdDto
 
 
 @mcp.tool()
-async def get_section_tables(section_id: str) -> str:
-    """Get all tables in a specific restaurant section.
+async def get_section_tables(dto: SectionIdDto) -> str:
+    """Get all tables in a restaurant section.
 
     Args:
-        section_id: The UUID of the section.
+        dto: Section ID parameter.
 
     Returns:
         List of tables with capacity and availability status.
@@ -20,45 +21,47 @@ async def get_section_tables(section_id: str) -> str:
     logger.info(
         "Getting section tables",
         context="get_section_tables",
-        section_id=section_id,
+        section_id=dto.section_id,
     )
 
     try:
-        if not section_id:
-            return "❌ Error: section_id is required"
-
-        response = await http_client.get(f"/api/v1/tables/section/{section_id}")
+        response = await http_client.get(f"/api/v1/sections/{dto.section_id}/tables")
 
         if response is None:
-            return f"❌ Could not retrieve tables for section '{section_id}'"
+            return f"❌ Tables not found for section '{dto.section_id}'"
 
-        tables = response.get("data", []) if isinstance(response, dict) else response
+        tables = response if isinstance(response, list) else response.get("data", [])
 
         if not tables:
             return "🪑 No tables configured in this section"
 
         result = "🪑 **Section Tables:**\n\n"
+
         for table in tables:
-            name = table.get("name", table.get("tableNumber", "Unknown"))
-            capacity = table.get("capacity", "N/A")
-            status = table.get("status", "available")
-            is_active = table.get("active", True)
+            table_num = table.get("tableNumber", "?")
+            table_id = table.get("id", "")[:8]
+            capacity = table.get("capacity", 0)
+            min_cap = table.get("minCapacity", 1)
+            is_available = table.get("isAvailable", True)
+            is_active = table.get("isActive", True)
 
-            status_emoji = (
-                "🟢"
-                if status == "available"
-                else "🔴" if status == "occupied" else "🟡"
-            )
-            active_indicator = "" if is_active else " (Inactive)"
+            if not is_active:
+                status = "⏸️ Inactive"
+            elif is_available:
+                status = "✅ Available"
+            else:
+                status = "🔴 Occupied"
 
-            result += f"{status_emoji} Table **{name}**{active_indicator}\n"
-            result += f"   Capacity: {capacity} people\n"
-            result += f"   Status: {status.capitalize()}\n\n"
+            result += f"   Table #{table_num} ({table_id})\n"
+            result += f"   👥 Capacity: {min_cap}-{capacity} guests\n"
+            result += f"   Status: {status}\n\n"
 
         return result.strip()
 
     except Exception as e:
         logger.error(
-            "Failed to get section tables", error=str(e), context="get_section_tables"
+            "Failed to get section tables",
+            error=str(e),
+            context="get_section_tables",
         )
         return f"❌ Error getting section tables: {str(e)}"
