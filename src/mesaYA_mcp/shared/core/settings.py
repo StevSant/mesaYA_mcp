@@ -41,7 +41,7 @@ class Settings(BaseSettings):
 
     # MCP Gateway configuration (HTTP/SSE transport)
     mcp_gateway_host: str = "0.0.0.0"
-    mcp_gateway_port: int = 8000
+    mcp_gateway_port: int = 8002
     mcp_transport: str = "stdio"  # "stdio" or "sse"
 
     @computed_field
