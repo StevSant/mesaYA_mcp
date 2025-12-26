@@ -1,58 +1,17 @@
-"""Tool execution context.
+"""Tool context module - Re-exports for backward compatibility.
 
-Provides a context object to pass access level and user info to tools.
-Uses contextvars for thread-safe context propagation.
+This module re-exports ToolContext and context management functions
+from their individual modules for backward compatibility.
 """
 
-from contextvars import ContextVar
-from dataclasses import dataclass
-from typing import Optional
+from mesaYA_mcp.shared.domain.get_current_context import get_current_context
+from mesaYA_mcp.shared.domain.reset_context import reset_context
+from mesaYA_mcp.shared.domain.set_current_context import set_current_context
+from mesaYA_mcp.shared.domain.tool_context_model import ToolContext
 
-from mesaYA_mcp.shared.domain.access_level import AccessLevel
-
-
-@dataclass(frozen=True)
-class ToolContext:
-    """Context for tool execution.
-
-    Contains user information needed for authorization and filtering.
-
-    Attributes:
-        access_level: User's access level for authorization.
-        user_id: Optional user ID for user-specific queries.
-        restaurant_id: Optional restaurant ID for owner-specific queries.
-    """
-
-    access_level: AccessLevel = AccessLevel.GUEST
-    user_id: Optional[str] = None
-    restaurant_id: Optional[str] = None
-
-
-# Context variable for the current tool context
-_current_context: ContextVar[ToolContext] = ContextVar(
-    "tool_context",
-    default=ToolContext(),
-)
-
-
-def get_current_context() -> ToolContext:
-    """Get the current tool execution context.
-
-    Returns:
-        Current ToolContext, defaults to guest access if not set.
-    """
-    return _current_context.get()
-
-
-def set_current_context(context: ToolContext) -> None:
-    """Set the current tool execution context.
-
-    Args:
-        context: The ToolContext to set as current.
-    """
-    _current_context.set(context)
-
-
-def reset_context() -> None:
-    """Reset context to default (guest access)."""
-    _current_context.set(ToolContext())
+__all__ = [
+    "ToolContext",
+    "get_current_context",
+    "set_current_context",
+    "reset_context",
+]
