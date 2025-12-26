@@ -2,13 +2,18 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.shared.domain.access_level import AccessLevel
+from mesaYA_mcp.shared.application.require_access_decorator import require_access
 from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import CancelReservationDto
 
 
 @mcp.tool()
+@require_access(AccessLevel.USER)
 async def cancel_reservation(dto: CancelReservationDto) -> str:
     """Cancel a reservation.
+
+    Requires USER access level or higher.
 
     Args:
         dto: Cancellation parameters including reservation_id and optional reason.

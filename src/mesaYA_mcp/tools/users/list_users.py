@@ -2,16 +2,25 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.shared.domain.access_level import AccessLevel
+from mesaYA_mcp.shared.application.require_access_decorator import require_access
 from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.users import ListUsersDto
 
 
 @mcp.tool()
+@require_access(AccessLevel.ADMIN)
 async def list_users(dto: ListUsersDto) -> str:
     """List users with optional filters.
 
+    Requires ADMIN access level.
+
+    You can filter by specific fields like email, name, or role.
+    Use the email filter when you know the exact email address.
+    Use the name filter for partial name matching.
+
     Args:
-        dto: Filter parameters including role, active_only, search, and limit.
+        dto: Filter parameters including email, name, role, active_only, search, and limit.
 
     Returns:
         List of users in TOON format.
@@ -23,16 +32,22 @@ async def list_users(dto: ListUsersDto) -> str:
     logger.info(
         "Listing users",
         context="list_users",
+        email=dto.email,
+        name=dto.name,
         role=dto.role,
         active_only=dto.active_only,
     )
 
     try:
         params: dict = {"limit": dto.limit}
+        if dto.email:
+            params["email"] = dto.email
+        if dto.name:
+            params["name"] = dto.name
         if dto.role:
             params["role"] = dto.role
         if dto.active_only:
-            params["isActive"] = True
+            params["active"] = True
         if dto.search:
             params["q"] = dto.search
 
@@ -46,7 +61,7 @@ async def list_users(dto: ListUsersDto) -> str:
             )
 
         if isinstance(response, dict):
-            users = response.get("data", [])
+            users = response.get("data", response.get("results", []))
         else:
             users = response
 

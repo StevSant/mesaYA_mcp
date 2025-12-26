@@ -2,13 +2,18 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.shared.domain.access_level import AccessLevel
+from mesaYA_mcp.shared.application.require_access_decorator import require_access
 from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import RestaurantReservationsDto
 
 
 @mcp.tool()
+@require_access(AccessLevel.OWNER)
 async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
     """Get all reservations for a specific restaurant.
+
+    Requires OWNER access level or higher.
 
     Args:
         dto: Restaurant reservations parameters including restaurant_id, date, status, limit.

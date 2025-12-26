@@ -61,17 +61,19 @@ BACKEND_API_TIMEOUT=30.0
 
 ## Herramientas Disponibles
 
-### 🍽️ Restaurantes (7 herramientas)
+### 🍽️ Restaurantes (8 herramientas)
 
 #### `search_restaurants`
 
-Busca restaurantes por diferentes criterios.
+Busca restaurantes por diferentes criterios usando filtros específicos.
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `query` | string | No | Término de búsqueda |
-| `cuisine` | string | No | Tipo de cocina (italiana, mexicana, etc.) |
-| `location` | string | No | Ciudad o ubicación |
+| `name` | string | No | Nombre del restaurante (coincidencia parcial, preferido para búsquedas) |
+| `city` | string | No | Ciudad o ubicación |
+| `cuisine_type` | string | No | Tipo de cocina (italiana, mexicana, etc.) |
+| `query` | string | No | Término de búsqueda general |
+| `is_active` | bool | No | Solo restaurantes activos (default: true) |
 | `limit` | int | No | Número máximo de resultados (default: 10) |
 
 **Ejemplo de uso:**
@@ -80,17 +82,35 @@ Busca restaurantes por diferentes criterios.
 {
   "tool": "search_restaurants",
   "arguments": {
-    "query": "pizza",
-    "cuisine": "italiana",
-    "location": "Manta",
+    "name": "Pizza Palace",
+    "city": "Manta",
     "limit": 5
+  }
+}
+```
+
+#### `get_restaurant_by_name`
+
+Obtiene información detallada de un restaurante por su nombre. **Preferido sobre `get_restaurant_info` cuando conoces el nombre.**
+
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|-----------|-------------|
+| `name` | string | Sí | Nombre exacto del restaurante |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "get_restaurant_by_name",
+  "arguments": {
+    "name": "Pizza Palace"
   }
 }
 ```
 
 #### `get_restaurant_info`
 
-Obtiene información detallada de un restaurante.
+Obtiene información detallada de un restaurante por UUID (use `get_restaurant_by_name` si conoce el nombre).
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
@@ -316,11 +336,30 @@ Obtiene estadísticas de menús.
 
 ---
 
-### 👤 Usuarios (3 herramientas)
+### 👤 Usuarios (4 herramientas)
+
+#### `get_user_by_email`
+
+Obtiene información de un usuario por su email. **Preferido sobre `get_user` cuando conoces el email.**
+
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|-----------|-------------|
+| `email` | string | Sí | Email del usuario |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "get_user_by_email",
+  "arguments": {
+    "email": "usuario@ejemplo.com"
+  }
+}
+```
 
 #### `get_user`
 
-Obtiene información de un usuario.
+Obtiene información de un usuario por UUID (use `get_user_by_email` si conoce el email).
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
@@ -328,13 +367,27 @@ Obtiene información de un usuario.
 
 #### `list_users`
 
-Lista usuarios con filtros.
+Lista usuarios con filtros específicos.
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `query` | string | No | Buscar por nombre o email |
-| `role` | string | No | Filtrar por rol (admin, owner, staff, customer) |
+| `email` | string | No | Filtrar por email exacto (preferido para búsquedas) |
+| `name` | string | No | Filtrar por nombre (coincidencia parcial) |
+| `role` | string | No | Filtrar por rol (ADMIN, OWNER, USER) |
+| `active_only` | bool | No | Solo usuarios activos (default: true) |
+| `search` | string | No | Búsqueda general por nombre o email |
 | `limit` | int | No | Máximo de resultados (default: 20) |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "list_users",
+  "arguments": {
+    "email": "usuario@ejemplo.com"
+  }
+}
+```
 
 #### `get_user_analytics`
 

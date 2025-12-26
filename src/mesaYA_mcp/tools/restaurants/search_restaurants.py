@@ -8,10 +8,14 @@ from mesaYA_mcp.tools.dtos.restaurants import SearchRestaurantsDto
 
 @mcp.tool()
 async def search_restaurants(dto: SearchRestaurantsDto) -> str:
-    """Search for restaurants by name, cuisine type, or location.
+    """Search for restaurants by name, cuisine type, city, or location.
+
+    You can filter by specific fields like name, city, or cuisine type.
+    Use the name filter when you know the restaurant name.
+    Use the city filter for location-based search.
 
     Args:
-        dto: Search parameters including query, cuisine_type, city, and limit.
+        dto: Search parameters including name, city, cuisine_type, query, and limit.
 
     Returns:
         List of matching restaurants with basic info in TOON format.
@@ -23,19 +27,24 @@ async def search_restaurants(dto: SearchRestaurantsDto) -> str:
     logger.info(
         "Searching restaurants",
         context="search_restaurants",
-        query=dto.query,
-        cuisine_type=dto.cuisine_type,
+        name=dto.name,
         city=dto.city,
+        cuisine_type=dto.cuisine_type,
+        query=dto.query,
     )
 
     try:
         params: dict = {"limit": dto.limit}
-        if dto.query:
-            params["q"] = dto.query
-        if dto.cuisine_type:
-            params["cuisineType"] = dto.cuisine_type
+        if dto.name:
+            params["name"] = dto.name
         if dto.city:
             params["city"] = dto.city
+        if dto.cuisine_type:
+            params["cuisineType"] = dto.cuisine_type
+        if dto.query:
+            params["q"] = dto.query
+        if dto.is_active:
+            params["isActive"] = True
 
         response = await http_client.get("/api/v1/restaurants", params=params)
 
@@ -43,8 +52,10 @@ async def search_restaurants(dto: SearchRestaurantsDto) -> str:
             return adapter.map_empty("restaurant", "search")
 
         if isinstance(response, dict):
-            restaurants = response.get("data", [])
+            restaurants = response.get("data", response.get("results", []))
             total = response.get("pagination", {}).get("totalItems", len(restaurants))
+            if not restaurants and "results" not in response and "data" not in response:
+                restaurants = [response] if response.get("id") else []
         else:
             restaurants = response
             total = len(restaurants)

@@ -2,13 +2,18 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
+from mesaYA_mcp.shared.domain.access_level import AccessLevel
+from mesaYA_mcp.shared.application.require_access_decorator import require_access
 from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
 from mesaYA_mcp.tools.dtos.reservations import CreateReservationDto
 
 
 @mcp.tool()
+@require_access(AccessLevel.USER)
 async def create_reservation(dto: CreateReservationDto) -> str:
     """Create a new reservation at a restaurant.
+
+    Requires USER access level or higher.
 
     Args:
         dto: Reservation details including restaurant_id, customer_id, date, time, party_size.

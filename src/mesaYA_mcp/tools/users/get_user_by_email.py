@@ -1,22 +1,25 @@
-"""Get user tool."""
+"""Get user by email tool."""
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
 from mesaYA_mcp.shared.domain.access_level import AccessLevel
 from mesaYA_mcp.shared.application.require_access_decorator import require_access
 from mesaYA_mcp.mappers.adapters.toon_response_adapter import get_response_adapter
-from mesaYA_mcp.tools.dtos.users import UserIdDto
+from mesaYA_mcp.tools.dtos.users import UserEmailDto
 
 
 @mcp.tool()
 @require_access(AccessLevel.ADMIN)
-async def get_user(dto: UserIdDto) -> str:
-    """Get detailed information about a specific user.
+async def get_user_by_email(dto: UserEmailDto) -> str:
+    """Get detailed information about a user by their email address.
 
     Requires ADMIN access level.
 
+    This is the preferred way to find a user when you know their email,
+    instead of requiring a UUID.
+
     Args:
-        dto: User ID parameter.
+        dto: User email parameter.
 
     Returns:
         Complete user profile in TOON format.
@@ -25,13 +28,17 @@ async def get_user(dto: UserIdDto) -> str:
     http_client = get_http_client()
     adapter = get_response_adapter()
 
-    logger.info("Getting user details", context="get_user", user_id=dto.user_id)
+    logger.info(
+        "Getting user details by email",
+        context="get_user_by_email",
+        email=dto.email,
+    )
 
     try:
-        response = await http_client.get(f"/api/v1/users/{dto.user_id}")
+        response = await http_client.get(f"/api/v1/users/by-email/{dto.email}")
 
         if response is None:
-            return adapter.map_not_found("user", dto.user_id)
+            return adapter.map_not_found("user", dto.email)
 
         return adapter.map_success(
             data=response,
@@ -40,7 +47,11 @@ async def get_user(dto: UserIdDto) -> str:
         )
 
     except Exception as e:
-        logger.error("Failed to get user", error=str(e), context="get_user")
+        logger.error(
+            "Failed to get user by email",
+            error=str(e),
+            context="get_user_by_email",
+        )
         return adapter.map_error(
             message=str(e),
             entity_type="user",
