@@ -8,7 +8,7 @@ from typing import Any
 
 from toon_format import encode
 
-from mesaYA_mcp.mappers.ports.response_port import ResponsePort
+from mesaYA_mcp.src.mesaYA_mcp.shared.application.ports.response_port import ResponsePort
 
 
 class ToonResponseAdapter(ResponsePort):

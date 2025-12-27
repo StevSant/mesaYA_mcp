@@ -6,9 +6,10 @@ Decorator to enforce access level requirements on MCP tools.
 from functools import wraps
 from typing import Callable, TypeVar, ParamSpec
 
-from mesaYA_mcp.shared.domain.access_level import AccessLevel, has_access
+from mesaYA_mcp.shared.domain.access_level import AccessLevel
+from mesaYA_mcp.shared.domain.has_access import has_access
 from mesaYA_mcp.shared.domain.authorization_error import AuthorizationError
-from mesaYA_mcp.shared.domain.tool_context import get_current_context
+from mesaYA_mcp.shared.domain.get_current_context import get_current_context
 
 P = ParamSpec("P")
 R = TypeVar("R")

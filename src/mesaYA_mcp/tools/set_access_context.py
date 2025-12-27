@@ -6,7 +6,8 @@ Must be called before any access-restricted tools.
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.domain.access_level import AccessLevel
-from mesaYA_mcp.shared.domain.tool_context import ToolContext, set_current_context
+from mesaYA_mcp.shared.domain.tool_context_model import ToolContext
+from mesaYA_mcp.shared.domain.set_current_context import set_current_context
 
 
 @mcp.tool()

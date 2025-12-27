@@ -5,7 +5,7 @@ MCP tool that returns the list of tools available for a given access level.
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.domain.access_level import AccessLevel
-from mesaYA_mcp.shared.application.authorization_service import get_allowed_tools
+from mesaYA_mcp.src.mesaYA_mcp.shared.application.services.authorization_service import get_allowed_tools
 
 
 @mcp.tool()
