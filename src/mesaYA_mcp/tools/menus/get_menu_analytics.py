@@ -2,7 +2,9 @@
 
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_http_client
-from mesaYA_mcp.src.mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import get_response_adapter
+from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
+    get_response_adapter,
+)
 from mesaYA_mcp.tools.dtos.menus import MenuAnalyticsDto
 
 
