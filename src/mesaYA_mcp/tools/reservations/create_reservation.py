@@ -7,6 +7,10 @@ from mesaYA_mcp.shared.application.require_access_decorator import require_acces
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import (
+    resolve_restaurant_id,
+    resolve_user_id,
+)
 from mesaYA_mcp.tools.dtos.reservations import CreateReservationDto
 
 
@@ -15,10 +19,20 @@ from mesaYA_mcp.tools.dtos.reservations import CreateReservationDto
 async def create_reservation(dto: CreateReservationDto) -> str:
     """Create a new reservation at a restaurant.
 
+    You can identify the restaurant by name and the customer by email.
+    No need to know internal UUIDs!
+
+    Examples:
+    - restaurant: "Pizza Palace"
+    - customer_email: "john@example.com"
+    - date: "2025-01-20"
+    - time: "19:30"
+    - party_size: 4
+
     Requires USER access level or higher.
 
     Args:
-        dto: Reservation details including restaurant_id, customer_id, date, time, party_size.
+        dto: Reservation details including restaurant name, customer email, date, time, party_size.
 
     Returns:
         Confirmation with reservation details in TOON format.
@@ -30,23 +44,37 @@ async def create_reservation(dto: CreateReservationDto) -> str:
     logger.info(
         "Creating reservation",
         context="create_reservation",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
+        customer_email=dto.customer_email,
         date=dto.date,
         time=dto.time,
         party_size=dto.party_size,
     )
 
     try:
+        # Resolve restaurant by name or ID
+        restaurant_id = await resolve_restaurant_id(dto.restaurant)
+        if restaurant_id is None:
+            return adapter.map_not_found("restaurant", dto.restaurant)
+
+        # Resolve customer by email
+        customer_id = await resolve_user_id(dto.customer_email)
+        if customer_id is None:
+            return adapter.map_not_found("customer", dto.customer_email)
+
         payload = {
-            "restaurantId": dto.restaurant_id,
-            "customerId": dto.customer_id,
+            "restaurantId": restaurant_id,
+            "customerId": customer_id,
             "reservationDate": dto.date,
             "reservationTime": dto.time,
             "partySize": dto.party_size,
         }
 
-        if dto.table_id:
-            payload["tableId"] = dto.table_id
+        if dto.section_name:
+            # TODO: Resolve section by name within restaurant
+            payload["sectionName"] = dto.section_name
+        if dto.table_name:
+            payload["tableName"] = dto.table_name
         if dto.notes:
             payload["specialRequests"] = dto.notes
 

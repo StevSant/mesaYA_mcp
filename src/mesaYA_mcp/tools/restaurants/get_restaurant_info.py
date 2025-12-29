@@ -5,6 +5,7 @@ from mesaYA_mcp.shared.core import get_logger, get_http_client
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant
 from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 
 
@@ -12,30 +13,36 @@ from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 async def get_restaurant_info(dto: RestaurantIdDto) -> str:
     """Get detailed information about a specific restaurant.
 
+    You can use either the restaurant name or UUID to identify the restaurant.
+    Examples:
+    - restaurant: "Pizza Palace"
+    - restaurant: "La Trattoria"
+    - restaurant: "123e4567-e89b-12d3-a456-426614174000" (UUID also works)
+
     Args:
-        dto: Restaurant ID parameter.
+        dto: Restaurant identifier (name or UUID).
 
     Returns:
         Complete restaurant details in TOON format.
     """
     logger = get_logger()
-    http_client = get_http_client()
     adapter = get_response_adapter()
 
     logger.info(
         "Getting restaurant info",
         context="get_restaurant_info",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
     )
 
     try:
-        response = await http_client.get(f"/api/v1/restaurants/{dto.restaurant_id}")
+        # Resolve restaurant by name or ID
+        restaurant = await resolve_restaurant(dto.restaurant)
 
-        if response is None:
-            return adapter.map_not_found("restaurant", dto.restaurant_id)
+        if restaurant is None:
+            return adapter.map_not_found("restaurant", dto.restaurant)
 
         return adapter.map_success(
-            data=response,
+            data=restaurant,
             entity_type="restaurant",
             operation="get",
         )

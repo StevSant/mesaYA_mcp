@@ -5,6 +5,7 @@ from mesaYA_mcp.shared.core import get_logger, get_http_client
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant_id
 from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 
 
@@ -12,8 +13,13 @@ from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 async def get_restaurant_schedule(dto: RestaurantIdDto) -> str:
     """Get the operating hours schedule for a restaurant.
 
+    You can use either the restaurant name or UUID to identify the restaurant.
+    Examples:
+    - restaurant: "Pizza Palace"
+    - restaurant: "La Trattoria"
+
     Args:
-        dto: Restaurant ID parameter.
+        dto: Restaurant identifier (name or UUID).
 
     Returns:
         Weekly schedule with opening and closing times in TOON format.
@@ -25,17 +31,25 @@ async def get_restaurant_schedule(dto: RestaurantIdDto) -> str:
     logger.info(
         "Getting restaurant schedule",
         context="get_restaurant_schedule",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
     )
 
     try:
+        # Resolve restaurant by name or ID
+        restaurant_id = await resolve_restaurant_id(dto.restaurant)
+
+        if restaurant_id is None:
+            return adapter.map_not_found("restaurant", dto.restaurant)
+
+        # Use the correct endpoint: /api/v1/restaurants/{id}/schedule-slots
         response = await http_client.get(
-            f"/api/v1/restaurants/{dto.restaurant_id}/schedule"
+            f"/api/v1/restaurants/{restaurant_id}/schedule-slots"
         )
 
         if response is None:
-            return adapter.map_not_found("schedule", dto.restaurant_id)
+            return adapter.map_not_found("schedule", dto.restaurant)
 
+        # Response is a list of schedule slots
         schedules = response if isinstance(response, list) else response.get("data", [])
 
         if not schedules:

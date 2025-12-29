@@ -5,6 +5,7 @@ from mesaYA_mcp.shared.core import get_logger, get_http_client
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant_id
 from mesaYA_mcp.tools.dtos.menus import ListMenusDto
 
 
@@ -12,8 +13,13 @@ from mesaYA_mcp.tools.dtos.menus import ListMenusDto
 async def list_menus(dto: ListMenusDto) -> str:
     """List available menus, optionally filtered by restaurant.
 
+    You can filter by restaurant name instead of UUID.
+    Examples:
+    - restaurant: "Pizza Palace"
+    - restaurant: "La Trattoria"
+
     Args:
-        dto: Filter parameters including restaurant_id, active_only, and limit.
+        dto: Filter parameters including restaurant name, active_only, and limit.
 
     Returns:
         List of menus in TOON format.
@@ -25,14 +31,20 @@ async def list_menus(dto: ListMenusDto) -> str:
     logger.info(
         "Listing menus",
         context="list_menus",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
         active_only=dto.active_only,
     )
 
     try:
         params: dict = {"limit": dto.limit}
-        if dto.restaurant_id:
-            params["restaurantId"] = dto.restaurant_id
+
+        # Resolve restaurant if provided
+        if dto.restaurant:
+            restaurant_id = await resolve_restaurant_id(dto.restaurant)
+            if restaurant_id is None:
+                return adapter.map_not_found("restaurant", dto.restaurant)
+            params["restaurantId"] = restaurant_id
+
         if dto.active_only:
             params["isActive"] = True
 

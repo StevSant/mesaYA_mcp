@@ -5,6 +5,7 @@ from mesaYA_mcp.shared.core import get_logger, get_http_client
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant_id
 from mesaYA_mcp.tools.dtos.menus import MenuAnalyticsDto
 
 
@@ -12,8 +13,14 @@ from mesaYA_mcp.tools.dtos.menus import MenuAnalyticsDto
 async def get_menu_analytics(dto: MenuAnalyticsDto) -> str:
     """Get menu and dish analytics.
 
+    You can filter by restaurant name instead of UUID.
+    Examples:
+    - restaurant: "Pizza Palace"
+    - date_from: "2025-01-01"
+    - date_to: "2025-01-31"
+
     Args:
-        dto: Analytics parameters including restaurant_id, date_from, date_to.
+        dto: Analytics parameters including restaurant name, date_from, date_to.
 
     Returns:
         Menu statistics in TOON format.
@@ -25,13 +32,19 @@ async def get_menu_analytics(dto: MenuAnalyticsDto) -> str:
     logger.info(
         "Getting menu analytics",
         context="get_menu_analytics",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
     )
 
     try:
         params: dict = {}
-        if dto.restaurant_id:
-            params["restaurantId"] = dto.restaurant_id
+
+        # Resolve restaurant if provided
+        if dto.restaurant:
+            restaurant_id = await resolve_restaurant_id(dto.restaurant)
+            if restaurant_id is None:
+                return adapter.map_not_found("restaurant", dto.restaurant)
+            params["restaurantId"] = restaurant_id
+
         if dto.date_from:
             params["dateFrom"] = dto.date_from
         if dto.date_to:

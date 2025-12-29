@@ -61,6 +61,10 @@ BACKEND_API_TIMEOUT=30.0
 
 ## Herramientas Disponibles
 
+> **💡 Diseño User-Friendly**: Todas las herramientas del MCP están diseñadas para ser usadas por agentes de IA en conversaciones con usuarios.
+> En lugar de requerir UUIDs internos, las herramientas aceptan **nombres de restaurantes**, **emails de usuarios** y otros identificadores amigables.
+> El sistema resuelve automáticamente estos nombres a los IDs internos correspondientes.
+
 ### 🍽️ Restaurantes (8 herramientas)
 
 #### `search_restaurants`
@@ -110,11 +114,22 @@ Obtiene información detallada de un restaurante por su nombre. **Preferido sobr
 
 #### `get_restaurant_info`
 
-Obtiene información detallada de un restaurante por UUID (use `get_restaurant_by_name` si conoce el nombre).
+Obtiene información detallada de un restaurante. **Acepta nombre o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `restaurant_id` | string | Sí | UUID del restaurante |
+| `restaurant` | string | Sí | Nombre del restaurante o UUID (ej: "Pizza Palace") |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "get_restaurant_info",
+  "arguments": {
+    "restaurant": "La Trattoria"
+  }
+}
+```
 
 #### `get_nearby_restaurants`
 
@@ -129,35 +144,49 @@ Busca restaurantes cercanos a una ubicación geográfica.
 
 #### `get_restaurant_schedule`
 
-Obtiene los horarios disponibles de un restaurante.
+Obtiene los horarios disponibles de un restaurante. **Acepta nombre o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `restaurant_id` | string | Sí | UUID del restaurante |
+| `restaurant` | string | Sí | Nombre del restaurante o UUID |
 
 #### `get_restaurant_menu`
 
-Obtiene el menú completo de un restaurante.
+Obtiene el menú completo de un restaurante. **Acepta nombre o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `restaurant_id` | string | Sí | UUID del restaurante |
+| `restaurant` | string | Sí | Nombre del restaurante o UUID |
+| `active_only` | bool | No | Solo mostrar items activos (default: true) |
 
 #### `get_restaurant_sections`
 
-Obtiene las secciones/áreas de un restaurante.
+Obtiene las secciones/áreas de un restaurante. **Acepta nombre o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `restaurant_id` | string | Sí | UUID del restaurante |
+| `restaurant` | string | Sí | Nombre del restaurante o UUID |
 
 #### `get_section_tables`
 
-Obtiene las mesas disponibles en una sección.
+Obtiene las mesas disponibles en una sección. **Acepta nombre de sección con contexto del restaurante.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `section_id` | string | Sí | UUID de la sección |
+| `section` | string | Sí | Nombre de la sección o UUID (ej: "Terraza") |
+| `restaurant` | string | No* | Nombre del restaurante (requerido si usas nombre de sección) |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "get_section_tables",
+  "arguments": {
+    "section": "Terraza",
+    "restaurant": "Pizza Palace"
+  }
+}
+```
 
 ---
 
@@ -165,16 +194,17 @@ Obtiene las mesas disponibles en una sección.
 
 #### `create_reservation`
 
-Crea una nueva reservación.
+Crea una nueva reservación. **Usa nombre de restaurante y email del cliente.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `user_id` | string | Sí | UUID del usuario |
-| `restaurant_id` | string | Sí | UUID del restaurante |
+| `restaurant` | string | Sí | Nombre del restaurante (ej: "Pizza Palace") |
+| `customer_email` | string | Sí | Email del cliente (ej: "<juan@email.com>") |
 | `date` | string | Sí | Fecha (YYYY-MM-DD) |
 | `time` | string | Sí | Hora (HH:MM) |
 | `party_size` | int | Sí | Número de comensales |
-| `table_id` | string | No | UUID de mesa específica |
+| `section_name` | string | No | Nombre de la sección (ej: "Terraza") |
+| `table_name` | string | No | Nombre/número de mesa (ej: "Mesa 5") |
 | `notes` | string | No | Notas adicionales |
 
 **Ejemplo de uso:**
@@ -183,11 +213,12 @@ Crea una nueva reservación.
 {
   "tool": "create_reservation",
   "arguments": {
-    "user_id": "uuid-usuario",
-    "restaurant_id": "uuid-restaurante",
+    "restaurant": "Pizza Palace",
+    "customer_email": "juan.perez@email.com",
     "date": "2025-01-20",
     "time": "19:30",
     "party_size": 4,
+    "section_name": "Terraza",
     "notes": "Mesa cerca de la ventana"
   }
 }
@@ -207,21 +238,33 @@ Lista reservaciones con filtros opcionales.
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `user_id` | string | No | Filtrar por usuario |
 | `status` | string | No | Estado (pending, confirmed, cancelled, completed, no_show) |
-| `from_date` | string | No | Fecha inicial (YYYY-MM-DD) |
-| `to_date` | string | No | Fecha final (YYYY-MM-DD) |
+| `date_from` | string | No | Fecha inicial (YYYY-MM-DD) |
+| `date_to` | string | No | Fecha final (YYYY-MM-DD) |
 | `limit` | int | No | Máximo de resultados (default: 20) |
 
 #### `get_restaurant_reservations`
 
-Obtiene todas las reservaciones de un restaurante.
+Obtiene todas las reservaciones de un restaurante. **Acepta nombre o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `restaurant_id` | string | Sí | UUID del restaurante |
+| `restaurant` | string | Sí | Nombre del restaurante o UUID |
 | `date` | string | No | Filtrar por fecha |
 | `status` | string | No | Filtrar por estado |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "get_restaurant_reservations",
+  "arguments": {
+    "restaurant": "Pizza Palace",
+    "date": "2025-01-20",
+    "status": "confirmed"
+  }
+}
+```
 
 #### `update_reservation_status`
 
@@ -275,13 +318,26 @@ Marca una reservación como completada.
 
 #### `get_reservation_analytics`
 
-Obtiene estadísticas de reservaciones.
+Obtiene estadísticas de reservaciones. **Acepta nombre de restaurante o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `restaurant_id` | string | No | Filtrar por restaurante |
-| `from_date` | string | No | Fecha inicial |
-| `to_date` | string | No | Fecha final |
+| `restaurant` | string | No | Nombre del restaurante o UUID |
+| `date_from` | string | No | Fecha inicial |
+| `date_to` | string | No | Fecha final |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "get_reservation_analytics",
+  "arguments": {
+    "restaurant": "Pizza Palace",
+    "date_from": "2025-01-01",
+    "date_to": "2025-01-31"
+  }
+}
+```
 
 ---
 
@@ -297,24 +353,50 @@ Obtiene un menú específico por ID.
 
 #### `list_menus`
 
-Lista todos los menús de un restaurante.
+Lista todos los menús de un restaurante. **Acepta nombre o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `restaurant_id` | string | Sí | UUID del restaurante |
+| `restaurant` | string | No | Nombre del restaurante o UUID |
+| `active_only` | bool | No | Solo mostrar menús activos (default: true) |
 | `limit` | int | No | Máximo de resultados (default: 20) |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "list_menus",
+  "arguments": {
+    "restaurant": "Pizza Palace"
+  }
+}
+```
 
 #### `search_dishes`
 
-Busca platillos con filtros.
+Busca platillos con filtros. **Acepta nombre de restaurante o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `query` | string | No | Término de búsqueda |
-| `restaurant_id` | string | No | Filtrar por restaurante |
-| `min_price` | float | No | Precio mínimo |
+| `query` | string | Sí | Término de búsqueda |
+| `restaurant` | string | No | Nombre del restaurante o UUID |
+| `category` | string | No | Categoría: appetizer, main, dessert, etc |
 | `max_price` | float | No | Precio máximo |
+| `vegetarian` | bool | No | Solo platillos vegetarianos |
 | `limit` | int | No | Máximo de resultados (default: 20) |
+
+**Ejemplo de uso:**
+
+```json
+{
+  "tool": "search_dishes",
+  "arguments": {
+    "query": "pizza",
+    "restaurant": "Pizza Palace",
+    "max_price": 15.00
+  }
+}
+```
 
 #### `get_dish`
 
@@ -326,13 +408,13 @@ Obtiene detalles de un platillo específico.
 
 #### `get_menu_analytics`
 
-Obtiene estadísticas de menús.
+Obtiene estadísticas de menús. **Acepta nombre de restaurante o UUID.**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
-| `restaurant_id` | string | No | Filtrar por restaurante |
-| `from_date` | string | No | Fecha inicial |
-| `to_date` | string | No | Fecha final |
+| `restaurant` | string | No | Nombre del restaurante o UUID |
+| `date_from` | string | No | Fecha inicial |
+| `date_to` | string | No | Fecha final |
 
 ---
 

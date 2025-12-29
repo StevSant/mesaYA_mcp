@@ -5,6 +5,7 @@ from mesaYA_mcp.shared.core import get_logger, get_http_client
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant_id
 from mesaYA_mcp.tools.dtos.menus import SearchDishesDto
 
 
@@ -12,8 +13,14 @@ from mesaYA_mcp.tools.dtos.menus import SearchDishesDto
 async def search_dishes(dto: SearchDishesDto) -> str:
     """Search for dishes across menus.
 
+    You can filter by restaurant name instead of UUID.
+    Examples:
+    - query: "pizza"
+    - restaurant: "Pizza Palace"
+    - category: "main"
+
     Args:
-        dto: Search parameters including query, restaurant_id, category, max_price, vegetarian, limit.
+        dto: Search parameters including query, restaurant name, category, max_price, vegetarian, limit.
 
     Returns:
         List of matching dishes in TOON format.
@@ -26,13 +33,19 @@ async def search_dishes(dto: SearchDishesDto) -> str:
         "Searching dishes",
         context="search_dishes",
         query=dto.query,
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
     )
 
     try:
         params: dict = {"q": dto.query, "limit": dto.limit}
-        if dto.restaurant_id:
-            params["restaurantId"] = dto.restaurant_id
+
+        # Resolve restaurant if provided
+        if dto.restaurant:
+            restaurant_id = await resolve_restaurant_id(dto.restaurant)
+            if restaurant_id is None:
+                return adapter.map_not_found("restaurant", dto.restaurant)
+            params["restaurantId"] = restaurant_id
+
         if dto.category:
             params["category"] = dto.category
         if dto.max_price > 0:

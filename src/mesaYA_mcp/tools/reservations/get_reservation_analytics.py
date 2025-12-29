@@ -7,6 +7,7 @@ from mesaYA_mcp.shared.application.require_access_decorator import require_acces
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant_id
 from mesaYA_mcp.tools.dtos.reservations import ReservationAnalyticsDto
 
 
@@ -15,10 +16,16 @@ from mesaYA_mcp.tools.dtos.reservations import ReservationAnalyticsDto
 async def get_reservation_analytics(dto: ReservationAnalyticsDto) -> str:
     """Get reservation analytics and statistics.
 
+    You can filter by restaurant name instead of UUID.
+    Examples:
+    - restaurant: "Pizza Palace"
+    - date_from: "2025-01-01"
+    - date_to: "2025-01-31"
+
     Requires OWNER access level or higher.
 
     Args:
-        dto: Analytics parameters including restaurant_id, date_from, date_to.
+        dto: Analytics parameters including restaurant name, date_from, date_to.
 
     Returns:
         Reservation statistics in TOON format.
@@ -30,15 +37,21 @@ async def get_reservation_analytics(dto: ReservationAnalyticsDto) -> str:
     logger.info(
         "Getting reservation analytics",
         context="get_reservation_analytics",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
         date_from=dto.date_from,
         date_to=dto.date_to,
     )
 
     try:
         params: dict = {}
-        if dto.restaurant_id:
-            params["restaurantId"] = dto.restaurant_id
+
+        # Resolve restaurant if provided
+        if dto.restaurant:
+            restaurant_id = await resolve_restaurant_id(dto.restaurant)
+            if restaurant_id is None:
+                return adapter.map_not_found("restaurant", dto.restaurant)
+            params["restaurantId"] = restaurant_id
+
         if dto.date_from:
             params["dateFrom"] = dto.date_from
         if dto.date_to:

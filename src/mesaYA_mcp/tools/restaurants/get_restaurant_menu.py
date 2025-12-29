@@ -5,6 +5,7 @@ from mesaYA_mcp.shared.core import get_logger, get_http_client
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant_id
 from mesaYA_mcp.tools.dtos.restaurants import RestaurantMenuDto
 
 
@@ -12,8 +13,13 @@ from mesaYA_mcp.tools.dtos.restaurants import RestaurantMenuDto
 async def get_restaurant_menu(dto: RestaurantMenuDto) -> str:
     """Get the menu for a restaurant including all dishes.
 
+    You can use either the restaurant name or UUID to identify the restaurant.
+    Examples:
+    - restaurant: "Pizza Palace"
+    - restaurant: "La Trattoria"
+
     Args:
-        dto: Restaurant menu parameters including restaurant_id and active_only.
+        dto: Restaurant menu parameters including restaurant name and active_only.
 
     Returns:
         Complete menu with categories and dishes in TOON format.
@@ -25,19 +31,33 @@ async def get_restaurant_menu(dto: RestaurantMenuDto) -> str:
     logger.info(
         "Getting restaurant menu",
         context="get_restaurant_menu",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
     )
 
     try:
-        params = {"isActive": dto.active_only} if dto.active_only else {}
+        # Resolve restaurant by name or ID
+        restaurant_id = await resolve_restaurant_id(dto.restaurant)
+
+        if restaurant_id is None:
+            return adapter.map_not_found("restaurant", dto.restaurant)
+
+        params = {}
+        if dto.active_only:
+            params["isActive"] = "true"
+
+        # Use the correct endpoint: /api/v1/menus/restaurant/{restaurantId}
         response = await http_client.get(
-            f"/api/v1/restaurants/{dto.restaurant_id}/menu", params=params
+            f"/api/v1/menus/restaurant/{restaurant_id}", params=params
         )
 
         if response is None:
-            return adapter.map_not_found("menu", dto.restaurant_id)
+            return adapter.map_not_found("menu", dto.restaurant)
 
-        menus = response if isinstance(response, list) else [response]
+        # Response is paginated: { results: [...], total, page, ... }
+        if isinstance(response, dict):
+            menus = response.get("results", response.get("data", []))
+        else:
+            menus = response if isinstance(response, list) else [response]
 
         if not menus:
             return adapter.map_empty("menu", "get")

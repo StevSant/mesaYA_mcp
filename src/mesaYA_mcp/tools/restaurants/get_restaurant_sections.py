@@ -5,6 +5,7 @@ from mesaYA_mcp.shared.core import get_logger, get_http_client
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant_id
 from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 
 
@@ -12,8 +13,13 @@ from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 async def get_restaurant_sections(dto: RestaurantIdDto) -> str:
     """Get the floor plan sections of a restaurant.
 
+    You can use either the restaurant name or UUID to identify the restaurant.
+    Examples:
+    - restaurant: "Pizza Palace"
+    - restaurant: "La Trattoria"
+
     Args:
-        dto: Restaurant ID parameter.
+        dto: Restaurant identifier (name or UUID).
 
     Returns:
         List of sections (dining areas) in TOON format.
@@ -25,16 +31,22 @@ async def get_restaurant_sections(dto: RestaurantIdDto) -> str:
     logger.info(
         "Getting restaurant sections",
         context="get_restaurant_sections",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
     )
 
     try:
+        # Resolve restaurant by name or ID
+        restaurant_id = await resolve_restaurant_id(dto.restaurant)
+
+        if restaurant_id is None:
+            return adapter.map_not_found("restaurant", dto.restaurant)
+
         response = await http_client.get(
-            f"/api/v1/restaurants/{dto.restaurant_id}/sections"
+            f"/api/v1/restaurants/{restaurant_id}/sections"
         )
 
         if response is None:
-            return adapter.map_not_found("section", dto.restaurant_id)
+            return adapter.map_not_found("section", dto.restaurant)
 
         sections = response if isinstance(response, list) else response.get("data", [])
 

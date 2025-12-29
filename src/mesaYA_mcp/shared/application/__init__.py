@@ -9,6 +9,14 @@ from mesaYA_mcp.shared.application.services.authorization_service.can_access_too
 from mesaYA_mcp.shared.application.services.authorization_service.get_allowed_tools import (
     get_allowed_tools,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import (
+    resolve_restaurant,
+    resolve_restaurant_id,
+    resolve_user,
+    resolve_user_id,
+    resolve_section,
+    resolve_section_id,
+)
 from mesaYA_mcp.shared.application.ports import LoggerPort
 from mesaYA_mcp.shared.application.require_access_decorator import require_access
 
@@ -20,4 +28,11 @@ __all__ = [
     "can_access_tool",
     "get_allowed_tools",
     "require_access",
+    # Entity Resolvers
+    "resolve_restaurant",
+    "resolve_restaurant_id",
+    "resolve_user",
+    "resolve_user_id",
+    "resolve_section",
+    "resolve_section_id",
 ]

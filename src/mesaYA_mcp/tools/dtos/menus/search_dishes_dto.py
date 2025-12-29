@@ -4,13 +4,17 @@ from pydantic import BaseModel, Field
 
 
 class SearchDishesDto(BaseModel):
-    """Input for searching dishes."""
+    """Input for searching dishes.
+
+    The restaurant can be identified by its name instead of UUID.
+    """
 
     query: str = Field(
         ..., min_length=1, description="Search term for dish name or description"
     )
-    restaurant_id: str = Field(
-        default="", description="Optional restaurant UUID to filter by"
+    restaurant: str = Field(
+        default="",
+        description="Optional restaurant name or UUID to filter dishes (e.g., 'Pizza Palace').",
     )
     category: str = Field(
         default="", description="Category: appetizer, main, dessert, etc"

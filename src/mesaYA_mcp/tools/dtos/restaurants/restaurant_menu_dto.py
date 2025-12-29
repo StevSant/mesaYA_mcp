@@ -4,7 +4,16 @@ from pydantic import BaseModel, Field
 
 
 class RestaurantMenuDto(BaseModel):
-    """Input for getting restaurant menu."""
+    """Input for getting restaurant menu.
 
-    restaurant_id: str = Field(..., min_length=1, description="UUID of the restaurant")
+    The restaurant can be identified by either:
+    - Its name (e.g., "Pizza Palace", "La Trattoria")
+    - Its UUID (for backward compatibility)
+    """
+
+    restaurant: str = Field(
+        ...,
+        min_length=1,
+        description="Restaurant name or UUID. Use the restaurant name for easier lookup (e.g., 'Pizza Palace').",
+    )
     active_only: bool = Field(default=True, description="Only return active menu items")

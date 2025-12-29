@@ -7,6 +7,7 @@ from mesaYA_mcp.shared.application.require_access_decorator import require_acces
 from mesaYA_mcp.shared.infrastructure.adapters.toon_response_adapter import (
     get_response_adapter,
 )
+from mesaYA_mcp.shared.application.services.entity_resolver import resolve_restaurant_id
 from mesaYA_mcp.tools.dtos.reservations import RestaurantReservationsDto
 
 
@@ -15,10 +16,15 @@ from mesaYA_mcp.tools.dtos.reservations import RestaurantReservationsDto
 async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
     """Get all reservations for a specific restaurant.
 
+    You can identify the restaurant by its name instead of UUID.
+    Examples:
+    - restaurant: "Pizza Palace"
+    - restaurant: "La Trattoria"
+
     Requires OWNER access level or higher.
 
     Args:
-        dto: Restaurant reservations parameters including restaurant_id, date, status, limit.
+        dto: Restaurant reservations parameters including restaurant name, date, status, limit.
 
     Returns:
         List of reservations for the restaurant in TOON format.
@@ -30,11 +36,16 @@ async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
     logger.info(
         "Getting restaurant reservations",
         context="get_restaurant_reservations",
-        restaurant_id=dto.restaurant_id,
+        restaurant=dto.restaurant,
         date=dto.date,
     )
 
     try:
+        # Resolve restaurant by name or ID
+        restaurant_id = await resolve_restaurant_id(dto.restaurant)
+        if restaurant_id is None:
+            return adapter.map_not_found("restaurant", dto.restaurant)
+
         params: dict = {"limit": dto.limit}
         if dto.date:
             params["date"] = dto.date
@@ -42,12 +53,12 @@ async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
             params["status"] = dto.status
 
         response = await http_client.get(
-            f"/api/v1/reservations/restaurant/{dto.restaurant_id}",
+            f"/api/v1/reservations/restaurant/{restaurant_id}",
             params=params,
         )
 
         if response is None:
-            return adapter.map_not_found("reservation", dto.restaurant_id)
+            return adapter.map_not_found("reservation", dto.restaurant)
 
         if isinstance(response, dict):
             reservations = response.get("data", [])
