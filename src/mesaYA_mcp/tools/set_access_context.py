@@ -16,20 +16,7 @@ async def set_access_context(
     user_id: str | None = None,
     restaurant_id: str | None = None,
 ) -> str:
-    """Set the access context for subsequent tool calls.
-
-    IMPORTANT: Call this tool FIRST before calling any other tools.
-    It establishes the user's access level which controls what tools
-    they can use and what data they can access.
-
-    Args:
-        access_level: User's access level ('guest', 'user', 'owner', 'admin').
-        user_id: Optional user ID for user-specific operations.
-        restaurant_id: Optional restaurant ID for owner operations.
-
-    Returns:
-        Confirmation message with the set context.
-    """
+    """Set access context. CALL FIRST. Args: access_level (guest/user/owner/admin), user_id, restaurant_id."""
     try:
         level = AccessLevel(access_level.lower())
     except ValueError:

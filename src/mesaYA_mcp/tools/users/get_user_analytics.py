@@ -10,14 +10,7 @@ from mesaYA_mcp.tools.dtos.users import UserAnalyticsDto
 
 @mcp.tool()
 async def get_user_analytics(dto: UserAnalyticsDto) -> str:
-    """Get user analytics and statistics.
-
-    Args:
-        dto: Analytics parameters including restaurant_id, date_from, date_to.
-
-    Returns:
-        User statistics in TOON format.
-    """
+    """Get user analytics. Args: restaurant_id, date_from, date_to. Returns: user stats."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

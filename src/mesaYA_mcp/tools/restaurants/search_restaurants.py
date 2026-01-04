@@ -10,17 +10,13 @@ from mesaYA_mcp.tools.dtos.restaurants import SearchRestaurantsDto
 
 @mcp.tool()
 async def search_restaurants(dto: SearchRestaurantsDto) -> str:
-    """Search for restaurants by name, cuisine type, city, or location.
-
-    You can filter by specific fields like name, city, or cuisine type.
-    Use the name filter when you know the restaurant name.
-    Use the city filter for location-based search.
+    """Search restaurants by name, cuisine, or city. Returns matching restaurants in TOON format.
 
     Args:
-        dto: Search parameters including name, city, cuisine_type, query, and limit.
+        dto: Search filters (name, city, cuisine_type, query, limit).
 
     Returns:
-        List of matching restaurants with basic info in TOON format.
+        Matching restaurants list.
     """
     logger = get_logger()
     http_client = get_http_client()

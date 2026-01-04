@@ -10,17 +10,7 @@ from mesaYA_mcp.tools.dtos.restaurants import RestaurantNameDto
 
 @mcp.tool()
 async def get_restaurant_by_name(dto: RestaurantNameDto) -> str:
-    """Get detailed information about a restaurant by its name.
-
-    This is the preferred way to find a restaurant when you know its name,
-    instead of requiring a UUID.
-
-    Args:
-        dto: Restaurant name parameter.
-
-    Returns:
-        Complete restaurant details in TOON format.
-    """
+    """Get restaurant by name. Args: name. Returns: restaurant details."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

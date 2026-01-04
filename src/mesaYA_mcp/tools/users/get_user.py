@@ -13,16 +13,7 @@ from mesaYA_mcp.tools.dtos.users import UserIdDto
 @mcp.tool()
 @require_access(AccessLevel.ADMIN)
 async def get_user(dto: UserIdDto) -> str:
-    """Get detailed information about a specific user.
-
-    Requires ADMIN access level.
-
-    Args:
-        dto: User ID parameter.
-
-    Returns:
-        Complete user profile in TOON format.
-    """
+    """Get user details. Requires ADMIN. Args: user_id. Returns: user profile."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

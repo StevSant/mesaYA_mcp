@@ -13,16 +13,7 @@ from mesaYA_mcp.tools.dtos.reservations import ReservationIdDto
 @mcp.tool()
 @require_access(AccessLevel.USER)
 async def get_reservation(dto: ReservationIdDto) -> str:
-    """Get detailed information about a specific reservation.
-
-    Requires USER access level or higher.
-
-    Args:
-        dto: Reservation ID parameter.
-
-    Returns:
-        Complete reservation details in TOON format.
-    """
+    """Get reservation details. Requires USER+. Args: reservation_id. Returns: reservation data."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

@@ -12,16 +12,13 @@ from mesaYA_mcp.shared.application.services.authorization_service import (
 
 @mcp.tool()
 async def get_tools_for_access_level(access_level: str) -> str:
-    """Get the list of MCP tools available for a given access level.
-
-    Use this tool to understand what capabilities are available for the user's
-    access level before attempting to call other tools.
+    """Get allowed tools for an access level (guest/user/owner/admin).
 
     Args:
-        access_level: User's access level ('guest', 'user', 'owner', 'admin').
+        access_level: Access level string.
 
     Returns:
-        JSON list of allowed tool names for the access level.
+        Comma-separated list of allowed tool names.
     """
     try:
         level = AccessLevel(access_level.lower())

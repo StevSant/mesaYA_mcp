@@ -17,25 +17,13 @@ from mesaYA_mcp.tools.dtos.reservations import CreateReservationDto
 @mcp.tool()
 @require_access(AccessLevel.USER)
 async def create_reservation(dto: CreateReservationDto) -> str:
-    """Create a new reservation at a restaurant.
-
-    You can identify the restaurant by name and the customer by email.
-    No need to know internal UUIDs!
-
-    Examples:
-    - restaurant: "Pizza Palace"
-    - customer_email: "john@example.com"
-    - date: "2025-01-20"
-    - time: "19:30"
-    - party_size: 4
-
-    Requires USER access level or higher.
+    """Create a reservation. Identify restaurant by name, customer by email. Requires USER access.
 
     Args:
-        dto: Reservation details including restaurant name, customer email, date, time, party_size.
+        dto: Reservation details (restaurant, customer_email, date, time, party_size).
 
     Returns:
-        Confirmation with reservation details in TOON format.
+        Reservation confirmation in TOON format.
     """
     logger = get_logger()
     http_client = get_http_client()

@@ -43,7 +43,6 @@ Supports two transport modes:
 - get_user_analytics: Get user statistics
 """
 
-import sys
 from mesaYA_mcp.server import mcp
 from mesaYA_mcp.shared.core import get_logger, get_settings
 
@@ -66,12 +65,8 @@ def main() -> None:
     logger = get_logger()
     settings = get_settings()
 
-    # Check for command line transport override
     transport = settings.mcp_transport
-    if "--sse" in sys.argv or "--gateway" in sys.argv:
-        transport = "sse"
-    elif "--stdio" in sys.argv:
-        transport = "stdio"
+
 
     logger.info(
         f"Starting mesaYA_mcp MCP server (transport: {transport})",

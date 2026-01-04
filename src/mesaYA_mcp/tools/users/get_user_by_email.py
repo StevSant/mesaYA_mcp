@@ -13,19 +13,7 @@ from mesaYA_mcp.tools.dtos.users import UserEmailDto
 @mcp.tool()
 @require_access(AccessLevel.ADMIN)
 async def get_user_by_email(dto: UserEmailDto) -> str:
-    """Get detailed information about a user by their email address.
-
-    Requires ADMIN access level.
-
-    This is the preferred way to find a user when you know their email,
-    instead of requiring a UUID.
-
-    Args:
-        dto: User email parameter.
-
-    Returns:
-        Complete user profile in TOON format.
-    """
+    """Get user by email. Requires ADMIN. Args: email. Returns: user profile."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

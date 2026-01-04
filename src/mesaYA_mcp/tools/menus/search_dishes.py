@@ -11,19 +11,13 @@ from mesaYA_mcp.tools.dtos.menus import SearchDishesDto
 
 @mcp.tool()
 async def search_dishes(dto: SearchDishesDto) -> str:
-    """Search for dishes across menus.
-
-    You can filter by restaurant name instead of UUID.
-    Examples:
-    - query: "pizza"
-    - restaurant: "Pizza Palace"
-    - category: "main"
+    """Search dishes by query, restaurant, category, or price. Returns matches in TOON format.
 
     Args:
-        dto: Search parameters including query, restaurant name, category, max_price, vegetarian, limit.
+        dto: Search filters (query, restaurant, category, max_price, vegetarian, limit).
 
     Returns:
-        List of matching dishes in TOON format.
+        Matching dishes list.
     """
     logger = get_logger()
     http_client = get_http_client()

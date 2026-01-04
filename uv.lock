@@ -568,6 +568,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e2/fc/6dc7659c2ae5ddf280477011f4213a74f806862856b796ef08f028e664bf/mcp-1.25.0-py3-none-any.whl", hash = "sha256:b37c38144a666add0862614cc79ec276e97d72aa8ca26d622818d4e278b9721a", size = 233076, upload-time = "2025-12-19T10:19:55.416Z" },
 ]
 
+[package.optional-dependencies]
+cli = [
+    { name = "python-dotenv" },
+    { name = "typer" },
+]
+
 [[package]]
 name = "mdurl"
 version = "0.1.2"
@@ -584,6 +590,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
     { name = "httpx" },
+    { name = "mcp", extra = ["cli"] },
     { name = "pydantic-settings" },
     { name = "starlette" },
     { name = "toon-format" },
@@ -594,6 +601,7 @@ dependencies = [
 requires-dist = [
     { name = "fastmcp", specifier = ">=2.14.1" },
     { name = "httpx", specifier = ">=0.27.0" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.25.0" },
     { name = "pydantic-settings", specifier = ">=2.0.0" },
     { name = "starlette", specifier = ">=0.38.0" },
     { name = "toon-format", specifier = ">=0.9.0b1" },

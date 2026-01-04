@@ -14,22 +14,7 @@ from mesaYA_mcp.tools.dtos.reservations import ReservationAnalyticsDto
 @mcp.tool()
 @require_access(AccessLevel.OWNER)
 async def get_reservation_analytics(dto: ReservationAnalyticsDto) -> str:
-    """Get reservation analytics and statistics.
-
-    You can filter by restaurant name instead of UUID.
-    Examples:
-    - restaurant: "Pizza Palace"
-    - date_from: "2025-01-01"
-    - date_to: "2025-01-31"
-
-    Requires OWNER access level or higher.
-
-    Args:
-        dto: Analytics parameters including restaurant name, date_from, date_to.
-
-    Returns:
-        Reservation statistics in TOON format.
-    """
+    """Get reservation stats. Requires OWNER+. Args: restaurant, date_from, date_to. Returns: analytics."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

@@ -11,19 +11,7 @@ from mesaYA_mcp.tools.dtos.restaurants import RestaurantMenuDto
 
 @mcp.tool()
 async def get_restaurant_menu(dto: RestaurantMenuDto) -> str:
-    """Get the menu for a restaurant including all dishes.
-
-    You can use either the restaurant name or UUID to identify the restaurant.
-    Examples:
-    - restaurant: "Pizza Palace"
-    - restaurant: "La Trattoria"
-
-    Args:
-        dto: Restaurant menu parameters including restaurant name and active_only.
-
-    Returns:
-        Complete menu with categories and dishes in TOON format.
-    """
+    """Get restaurant menu. Args: restaurant (name/UUID), active_only. Returns: menu with dishes."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

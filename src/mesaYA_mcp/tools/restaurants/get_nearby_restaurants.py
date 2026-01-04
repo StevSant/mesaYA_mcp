@@ -10,14 +10,7 @@ from mesaYA_mcp.tools.dtos.restaurants import NearbyRestaurantsDto
 
 @mcp.tool()
 async def get_nearby_restaurants(dto: NearbyRestaurantsDto) -> str:
-    """Find restaurants near a geographic location.
-
-    Args:
-        dto: Location parameters including latitude, longitude, radius_km, and limit.
-
-    Returns:
-        List of nearby restaurants sorted by distance in TOON format.
-    """
+    """Find restaurants near coordinates. Args: lat, lng, radius_km, limit. Returns: nearby restaurants list."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

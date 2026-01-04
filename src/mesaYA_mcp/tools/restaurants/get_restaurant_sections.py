@@ -11,19 +11,7 @@ from mesaYA_mcp.tools.dtos.restaurants import RestaurantIdDto
 
 @mcp.tool()
 async def get_restaurant_sections(dto: RestaurantIdDto) -> str:
-    """Get the floor plan sections of a restaurant.
-
-    You can use either the restaurant name or UUID to identify the restaurant.
-    Examples:
-    - restaurant: "Pizza Palace"
-    - restaurant: "La Trattoria"
-
-    Args:
-        dto: Restaurant identifier (name or UUID).
-
-    Returns:
-        List of sections (dining areas) in TOON format.
-    """
+    """Get restaurant sections. Args: restaurant (name/UUID). Returns: dining areas list."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

@@ -11,20 +11,7 @@ from mesaYA_mcp.tools.dtos.menus import MenuAnalyticsDto
 
 @mcp.tool()
 async def get_menu_analytics(dto: MenuAnalyticsDto) -> str:
-    """Get menu and dish analytics.
-
-    You can filter by restaurant name instead of UUID.
-    Examples:
-    - restaurant: "Pizza Palace"
-    - date_from: "2025-01-01"
-    - date_to: "2025-01-31"
-
-    Args:
-        dto: Analytics parameters including restaurant name, date_from, date_to.
-
-    Returns:
-        Menu statistics in TOON format.
-    """
+    """Get menu analytics. Args: restaurant, date_from, date_to. Returns: menu stats."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

@@ -10,14 +10,7 @@ from mesaYA_mcp.tools.dtos.reservations import ReservationIdDto
 
 @mcp.tool()
 async def confirm_reservation(dto: ReservationIdDto) -> str:
-    """Confirm a pending reservation.
-
-    Args:
-        dto: Reservation ID parameter.
-
-    Returns:
-        Confirmation message with updated reservation details in TOON format.
-    """
+    """Confirm pending reservation. Args: reservation_id. Returns: updated reservation."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

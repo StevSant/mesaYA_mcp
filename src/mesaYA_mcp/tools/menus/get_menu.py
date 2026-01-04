@@ -10,14 +10,7 @@ from mesaYA_mcp.tools.dtos.menus import MenuIdDto
 
 @mcp.tool()
 async def get_menu(dto: MenuIdDto) -> str:
-    """Get detailed information about a specific menu.
-
-    Args:
-        dto: Menu ID parameter.
-
-    Returns:
-        Complete menu details in TOON format.
-    """
+    """Get menu details. Args: menu_id. Returns: menu data."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

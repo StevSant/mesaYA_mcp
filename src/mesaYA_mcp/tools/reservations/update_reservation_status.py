@@ -10,14 +10,7 @@ from mesaYA_mcp.tools.dtos.reservations import UpdateReservationStatusDto
 
 @mcp.tool()
 async def update_reservation_status(dto: UpdateReservationStatusDto) -> str:
-    """Update the status of a reservation.
-
-    Args:
-        dto: Status update parameters including reservation_id, new_status, and reason.
-
-    Returns:
-        Confirmation of the status update in TOON format.
-    """
+    """Update reservation status. Args: reservation_id, new_status, reason. Returns: confirmation."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

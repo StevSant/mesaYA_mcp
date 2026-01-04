@@ -11,19 +11,7 @@ from mesaYA_mcp.tools.dtos.menus import ListMenusDto
 
 @mcp.tool()
 async def list_menus(dto: ListMenusDto) -> str:
-    """List available menus, optionally filtered by restaurant.
-
-    You can filter by restaurant name instead of UUID.
-    Examples:
-    - restaurant: "Pizza Palace"
-    - restaurant: "La Trattoria"
-
-    Args:
-        dto: Filter parameters including restaurant name, active_only, and limit.
-
-    Returns:
-        List of menus in TOON format.
-    """
+    """List menus. Args: restaurant, active_only, limit. Returns: menus list."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

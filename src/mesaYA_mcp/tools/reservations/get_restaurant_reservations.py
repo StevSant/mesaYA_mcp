@@ -14,21 +14,7 @@ from mesaYA_mcp.tools.dtos.reservations import RestaurantReservationsDto
 @mcp.tool()
 @require_access(AccessLevel.OWNER)
 async def get_restaurant_reservations(dto: RestaurantReservationsDto) -> str:
-    """Get all reservations for a specific restaurant.
-
-    You can identify the restaurant by its name instead of UUID.
-    Examples:
-    - restaurant: "Pizza Palace"
-    - restaurant: "La Trattoria"
-
-    Requires OWNER access level or higher.
-
-    Args:
-        dto: Restaurant reservations parameters including restaurant name, date, status, limit.
-
-    Returns:
-        List of reservations for the restaurant in TOON format.
-    """
+    """Get restaurant reservations. Requires OWNER+. Args: restaurant, date, status, limit. Returns: reservations list."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

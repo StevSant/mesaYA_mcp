@@ -13,16 +13,7 @@ from mesaYA_mcp.tools.dtos.reservations import ListReservationsDto
 @mcp.tool()
 @require_access(AccessLevel.USER)
 async def list_reservations(dto: ListReservationsDto) -> str:
-    """List reservations with optional filters.
-
-    Requires USER access level or higher.
-
-    Args:
-        dto: Filter parameters including status, date_from, date_to, and limit.
-
-    Returns:
-        List of reservations in TOON format.
-    """
+    """List reservations. Requires USER+. Args: status, date_from, date_to, limit. Returns: reservations list."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

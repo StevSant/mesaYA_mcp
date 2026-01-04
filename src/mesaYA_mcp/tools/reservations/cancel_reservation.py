@@ -13,16 +13,7 @@ from mesaYA_mcp.tools.dtos.reservations import CancelReservationDto
 @mcp.tool()
 @require_access(AccessLevel.USER)
 async def cancel_reservation(dto: CancelReservationDto) -> str:
-    """Cancel a reservation.
-
-    Requires USER access level or higher.
-
-    Args:
-        dto: Cancellation parameters including reservation_id and optional reason.
-
-    Returns:
-        Confirmation of the cancellation in TOON format.
-    """
+    """Cancel reservation. Requires USER+. Args: reservation_id, reason (opt). Returns: confirmation."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

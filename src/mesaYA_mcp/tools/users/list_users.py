@@ -13,20 +13,7 @@ from mesaYA_mcp.tools.dtos.users import ListUsersDto
 @mcp.tool()
 @require_access(AccessLevel.ADMIN)
 async def list_users(dto: ListUsersDto) -> str:
-    """List users with optional filters.
-
-    Requires ADMIN access level.
-
-    You can filter by specific fields like email, name, or role.
-    Use the email filter when you know the exact email address.
-    Use the name filter for partial name matching.
-
-    Args:
-        dto: Filter parameters including email, name, role, active_only, search, and limit.
-
-    Returns:
-        List of users in TOON format.
-    """
+    """List users. Requires ADMIN. Args: email, name, role, active_only, search, limit. Returns: users list."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

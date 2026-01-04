@@ -10,14 +10,7 @@ from mesaYA_mcp.tools.dtos.menus import DishIdDto
 
 @mcp.tool()
 async def get_dish(dto: DishIdDto) -> str:
-    """Get detailed information about a specific dish.
-
-    Args:
-        dto: Dish ID parameter.
-
-    Returns:
-        Complete dish details in TOON format.
-    """
+    """Get dish details. Args: dish_id. Returns: dish data."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

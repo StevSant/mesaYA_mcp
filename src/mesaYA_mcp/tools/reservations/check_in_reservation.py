@@ -10,14 +10,7 @@ from mesaYA_mcp.tools.dtos.reservations import ReservationIdDto
 
 @mcp.tool()
 async def check_in_reservation(dto: ReservationIdDto) -> str:
-    """Mark a reservation as checked in when guests arrive.
-
-    Args:
-        dto: Reservation ID parameter.
-
-    Returns:
-        Confirmation of check-in with reservation details in TOON format.
-    """
+    """Check in guests. Args: reservation_id. Returns: check-in confirmation."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()

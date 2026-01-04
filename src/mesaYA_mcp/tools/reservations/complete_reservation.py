@@ -10,14 +10,7 @@ from mesaYA_mcp.tools.dtos.reservations import ReservationIdDto
 
 @mcp.tool()
 async def complete_reservation(dto: ReservationIdDto) -> str:
-    """Mark a reservation as completed after guests leave.
-
-    Args:
-        dto: Reservation ID parameter.
-
-    Returns:
-        Confirmation of completion in TOON format.
-    """
+    """Complete reservation after guests leave. Args: reservation_id. Returns: confirmation."""
     logger = get_logger()
     http_client = get_http_client()
     adapter = get_response_adapter()
