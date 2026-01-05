@@ -29,6 +29,7 @@ async def search_restaurants(dto: SearchRestaurantsDto) -> str:
         city=dto.city,
         cuisine_type=dto.cuisine_type,
         query=dto.query,
+        is_active=dto.is_active,
     )
 
     try:
@@ -41,8 +42,15 @@ async def search_restaurants(dto: SearchRestaurantsDto) -> str:
             params["cuisineType"] = dto.cuisine_type
         if dto.query:
             params["q"] = dto.query
-        if dto.is_active:
-            params["isActive"] = True
+        if dto.is_active is not None:
+            params["isActive"] = dto.is_active
+
+        logger.info(
+            "Calling backend API",
+            context="search_restaurants",
+            endpoint="/api/v1/restaurants",
+            params=params,
+        )
 
         response = await http_client.get("/api/v1/restaurants", params=params)
 
