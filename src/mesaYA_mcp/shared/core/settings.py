@@ -44,6 +44,15 @@ class Settings(BaseSettings):
     mcp_gateway_port: int = 8002
     mcp_transport: str = "stdio"  # "stdio" or "sse"
 
+    # AI Provider API Keys (for sentiment analysis and vision tools)
+    gemini_api_key: str = ""
+    openai_api_key: str = ""
+    groq_api_key: str = ""
+
+    # Supabase (for image storage)
+    supabase_url: str = ""
+    supabase_key: str = ""
+
     @computed_field
     @property
     def backend_api_url(self) -> str:
@@ -55,3 +64,9 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         """Check if running in production environment."""
         return self.environment.lower() == "production"
+
+    @computed_field
+    @property
+    def has_vision_model(self) -> bool:
+        """Check if a vision-capable model is available."""
+        return bool(self.gemini_api_key or self.openai_api_key)

@@ -15,9 +15,11 @@ Structure:
     ├── restaurants/          # Restaurant-related tools (8)
     ├── reservations/         # Reservation management tools (10)
     ├── menus/                # Menu and dish tools (5)
-    └── users/                # User management tools (3)
+    ├── users/                # User management tools (3)
+    ├── reviews/              # Review analysis tools (1)
+    └── ai/                   # AI/Vision analysis tools (1)
 
-Total: 28 MCP tools (1 file = 1 tool)
+Total: 30 MCP tools (1 file = 1 tool)
 """
 
 # Import authorization tools first
@@ -30,6 +32,8 @@ from mesaYA_mcp.tools import restaurants  # noqa: F401
 from mesaYA_mcp.tools import reservations  # noqa: F401
 from mesaYA_mcp.tools import menus  # noqa: F401
 from mesaYA_mcp.tools import users  # noqa: F401
+from mesaYA_mcp.tools import reviews  # noqa: F401
+from mesaYA_mcp.tools import ai  # noqa: F401
 
 __all__ = [
     "set_access_context",
@@ -38,4 +42,6 @@ __all__ = [
     "reservations",
     "menus",
     "users",
+    "reviews",
+    "ai",
 ]
