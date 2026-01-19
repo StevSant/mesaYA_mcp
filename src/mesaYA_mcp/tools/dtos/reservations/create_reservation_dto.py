@@ -6,9 +6,8 @@ from pydantic import BaseModel, Field
 class CreateReservationDto(BaseModel):
     """Input for creating a reservation.
 
-    Both restaurant and customer can be identified by user-friendly values:
-    - restaurant: Use the restaurant name (e.g., "Pizza Palace")
-    - customer: Use the customer's email (e.g., "john@example.com")
+    Restaurant can be identified by name (e.g., "Pizza Palace").
+    Customer email is optional - if not provided, uses the logged-in user's email.
     """
 
     restaurant: str = Field(
@@ -17,9 +16,8 @@ class CreateReservationDto(BaseModel):
         description="Restaurant name or UUID. Use the restaurant name for easier lookup (e.g., 'Pizza Palace').",
     )
     customer_email: str = Field(
-        ...,
-        min_length=1,
-        description="Customer email address (e.g., 'john@example.com'). The system will find the customer by email.",
+        default="",
+        description="Customer email (optional). If omitted, uses the logged-in user's email automatically.",
     )
     date: str = Field(
         ..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="Date (YYYY-MM-DD)"

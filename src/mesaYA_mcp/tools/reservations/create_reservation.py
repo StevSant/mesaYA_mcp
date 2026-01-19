@@ -11,16 +11,17 @@ from mesaYA_mcp.shared.application.services.entity_resolver import (
     resolve_restaurant_id,
     resolve_user_id,
 )
+from mesaYA_mcp.shared.domain.get_current_context import get_current_context
 from mesaYA_mcp.tools.dtos.reservations import CreateReservationDto
 
 
 @mcp.tool()
 @require_access(AccessLevel.USER)
 async def create_reservation(dto: CreateReservationDto) -> str:
-    """Create a reservation. Identify restaurant by name, customer by email. Requires USER access.
+    """Create a reservation. Identify restaurant by name. customer_email is optional (uses logged-in user if omitted). Requires USER access.
 
     Args:
-        dto: Reservation details (restaurant, customer_email, date, time, party_size).
+        dto: Reservation details (restaurant, date, time, party_size). customer_email optional.
 
     Returns:
         Reservation confirmation in TOON format.
@@ -29,11 +30,31 @@ async def create_reservation(dto: CreateReservationDto) -> str:
     http_client = get_http_client()
     adapter = get_response_adapter()
 
+    # Get current context for auto-fill
+    context = get_current_context()
+
+    # Use context email if customer_email not provided
+    customer_email = dto.customer_email
+    if not customer_email and context.user_email:
+        customer_email = context.user_email
+        logger.info(
+            "Using authenticated user email for reservation",
+            context="create_reservation",
+            user_email=customer_email,
+        )
+
+    if not customer_email:
+        return adapter.map_error(
+            message="Customer email is required. Please provide an email or ensure you are logged in.",
+            entity_type="reservation",
+            operation="create",
+        )
+
     logger.info(
         "Creating reservation",
         context="create_reservation",
         restaurant=dto.restaurant,
-        customer_email=dto.customer_email,
+        customer_email=customer_email,
         date=dto.date,
         time=dto.time,
         party_size=dto.party_size,
@@ -46,9 +67,9 @@ async def create_reservation(dto: CreateReservationDto) -> str:
             return adapter.map_not_found("restaurant", dto.restaurant)
 
         # Resolve customer by email
-        customer_id = await resolve_user_id(dto.customer_email)
+        customer_id = await resolve_user_id(customer_email)
         if customer_id is None:
-            return adapter.map_not_found("customer", dto.customer_email)
+            return adapter.map_not_found("customer", customer_email)
 
         payload = {
             "restaurantId": restaurant_id,

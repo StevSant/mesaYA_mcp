@@ -14,9 +14,10 @@ from mesaYA_mcp.shared.domain.set_current_context import set_current_context
 async def set_access_context(
     access_level: str,
     user_id: str | None = None,
+    user_email: str | None = None,
     restaurant_id: str | None = None,
 ) -> str:
-    """Set access context. CALL FIRST. Args: access_level (guest/user/owner/admin), user_id, restaurant_id."""
+    """Set access context. CALL FIRST. Args: access_level (guest/user/owner/admin), user_id, user_email, restaurant_id."""
     try:
         level = AccessLevel(access_level.lower())
     except ValueError:
@@ -25,6 +26,7 @@ async def set_access_context(
     context = ToolContext(
         access_level=level,
         user_id=user_id,
+        user_email=user_email,
         restaurant_id=restaurant_id,
     )
     set_current_context(context)
@@ -32,5 +34,6 @@ async def set_access_context(
     return (
         f"Access context set: level={level.value}, "
         f"user_id={user_id or 'none'}, "
+        f"user_email={user_email or 'none'}, "
         f"restaurant_id={restaurant_id or 'none'}"
     )

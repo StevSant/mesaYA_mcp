@@ -18,9 +18,11 @@ class ToolContext:
     Attributes:
         access_level: User's access level for authorization.
         user_id: Optional user ID for user-specific queries.
+        user_email: Optional user email for reservation lookups.
         restaurant_id: Optional restaurant ID for owner-specific queries.
     """
 
     access_level: AccessLevel = AccessLevel.GUEST
     user_id: Optional[str] = None
+    user_email: Optional[str] = None
     restaurant_id: Optional[str] = None
